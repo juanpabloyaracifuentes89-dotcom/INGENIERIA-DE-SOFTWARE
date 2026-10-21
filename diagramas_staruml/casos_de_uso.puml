@@ -1,0 +1,61 @@
+@startuml Diagrama_Casos_de_Uso_AutosColombia
+!theme plain
+left to right direction
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+
+title DIAGRAMA DE CASOS DE USO - PARQUEADERO AUTOS COLOMBIA\n(Iteración 1: Gestión de Entrada y Salida de Vehículos)
+
+actor "Operador de Patio" as Operador
+actor "Administrador de Parqueadero" as Admin
+actor "Cliente Mensual" as Cliente
+
+rectangle "Sistema de Información Autos Colombia" {
+  
+  package "Gestión de Entradas y Celdas" {
+    usecase "CU01: Registrar Entrada de Vehículo" as CU01
+    usecase "CU02: Validar Vigencia de Mensualidad" as CU02
+    usecase "CU03: Asignar Celda de Estacionamiento" as CU03
+    usecase "CU04: Registrar Novedad Vehicular al Ingreso" as CU04
+    usecase "CU05: Consultar Mapa de Celdas en Tiempo Real" as CU05
+  }
+
+  package "Gestión de Salidas y Facturación" {
+    usecase "CU06: Registrar Salida de Vehículo" as CU06
+    usecase "CU07: Liquidar Tiempo y Calcular Cobro" as CU07
+    usecase "CU08: Generar e Imprimir Ticket / Factura" as CU08
+    usecase "CU09: Liberar Celda de Estacionamiento" as CU09
+  }
+
+  package "Supervisión y Control" {
+    usecase "CU10: Registrar Novedad Durante Estancia" as CU10
+    usecase "CU11: Consultar Historial de Novedades" as CU11
+    usecase "CU12: Monitorear Indicadores de Ocupación (KPIs)" as CU12
+  }
+
+  ' Relaciones Include / Extend
+  CU01 ..> CU02 : <<include>>
+  CU01 ..> CU03 : <<include>>
+  CU04 ..> CU01 : <<extend>>
+  
+  CU06 ..> CU07 : <<include>>
+  CU06 ..> CU08 : <<include>>
+  CU06 ..> CU09 : <<include>>
+}
+
+' Asociaciones de Actores
+Operador --> CU01
+Operador --> CU04
+Operador --> CU05
+Operador --> CU06
+Operador --> CU10
+Operador --> CU11
+
+Admin --> CU05
+Admin --> CU11
+Admin --> CU12
+Admin --|> Operador
+
+Cliente --> CU08 : Recibe comprobante
+
+@enduml

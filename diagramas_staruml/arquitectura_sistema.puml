@@ -1,0 +1,66 @@
+@startuml Arquitectura_Sistema_AutosColombia
+!theme plain
+skinparam componentStyle uml2
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam roundCorner 10
+
+title ARQUITECTURA EN CAPAS - SISTEMA PARQUEADERO AUTOS COLOMBIA\n(Iteración 1: Gestión de Entrada y Salida de Vehículos)
+
+package "Capa de Presentación (Frontend / UI)" {
+  [Navegador Web / Interfaz Operador] as UI
+  [Controlador UI (app.js)] as UI_Logic
+  [Plantillas HTML5 / CSS3 / Grid Patio] as UI_Views
+  
+  UI --> UI_Views : Renderiza
+  UI_Views --> UI_Logic : Eventos de Usuario
+}
+
+package "Capa de Aplicación / Servicios (Backend Node.js & Express)" {
+  [Servidor HTTP Express (server.js)] as Server
+  [Enrutador API REST (routes/api.js)] as Router
+  
+  package "Controladores de Negocio (Controllers)" {
+    [parkingController] as CtrlParking
+    [vehicleController] as CtrlVehiculos
+    [noveltyController] as CtrlNovedades
+  }
+  
+  package "Servicios / Reglas de Negocio" {
+    [Validador de Mensualidades] as ValMensualidad
+    [Calculador de Tarifas y Tiempos] as CalcTarifas
+    [Gestor de Estado de Celdas] as GestorCeldas
+  }
+}
+
+package "Capa de Persistencia y Datos" {
+  [Conector SQLite (DatabaseSync)] as DB_Adapter
+  database "Base de Datos Relacional\n(parqueadero.db / SQLite / PostgreSQL)" as DB {
+    folder "Tablas Principales" {
+      [celdas]
+      [registros_acceso]
+      [vehiculos]
+      [mensualidades]
+      [novedades]
+      [clientes]
+      [tipos_vehiculo]
+    }
+  }
+}
+
+' Flujos e Interacciones
+UI_Logic ..> Server : HTTP / JSON (AJAX Fetch)
+Server --> Router : Despacha Rutas (/api/*)
+Router --> CtrlParking : Invoca Lógica
+
+CtrlParking --> ValMensualidad : Valida Vigencia
+CtrlParking --> CalcTarifas : Calcula Cobro Salida
+CtrlParking --> GestorCeldas : Asigna / Libera Celda
+
+ValMensualidad --> DB_Adapter : Consulta Estado Contrato
+CalcTarifas --> DB_Adapter : Consulta Tarifas
+GestorCeldas --> DB_Adapter : Actualiza Celdas y Accesos
+
+DB_Adapter --> DB : Sentencias SQL / Transacciones ACID
+
+@enduml

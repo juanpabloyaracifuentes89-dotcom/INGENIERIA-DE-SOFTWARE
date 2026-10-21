@@ -1,0 +1,134 @@
+@startuml Diagrama_Clases_AutosColombia
+!theme plain
+skinparam defaultFontName Arial
+skinparam classAttributeIconSize 0
+
+title DIAGRAMA DE CLASES DEL DOMINIO - PARQUEADERO AUTOS COLOMBIA\n(Iteración 1: Gestión de Entrada y Salida de Vehículos)
+
+enum EstadoCelda {
+  DISPONIBLE
+  OCUPADA
+  MANTENIMIENTO
+}
+
+enum TipoServicio {
+  MENSUALIDAD
+  OCASIONAL
+}
+
+enum EstadoAcceso {
+  ACTIVO
+  FINALIZADO
+}
+
+enum NivelGravedad {
+  LEVE
+  MODERADA
+  GRAVE
+}
+
+enum TipoNovedad {
+  RAYON
+  GOLPE
+  ROTURA_VIDRIO
+  ACCESORIO_FALTANTE
+  OBJETO_VALOR
+  OTRO
+}
+
+class TipoVehiculo {
+  - id: Integer
+  - nombre: String
+  - tarifaHora: Double
+  - tarifaDia: Double
+  - tarifaMes: Double
+  - icono: String
+  + getId(): Integer
+  + getTarifaHora(): Double
+  + calcularTarifa(minutos: Integer): Double
+}
+
+class Cliente {
+  - id: Integer
+  - documento: String
+  - nombres: String
+  - apellidos: String
+  - telefono: String
+  - email: String
+  - estado: String
+  + tieneMensualidadActiva(): Boolean
+  + getNombreCompleto(): String
+}
+
+class Vehiculo {
+  - placa: String
+  - marca: String
+  - modelo: String
+  - color: String
+  + getPlaca(): String
+  + validarFormatoPlaca(): Boolean
+  + esMensual(): Boolean
+}
+
+class Mensualidad {
+  - id: Integer
+  - fechaInicio: Date
+  - fechaFin: Date
+  - valorPagado: Double
+  - estado: String
+  + esVigente(): Boolean
+  + diasRestantes(): Integer
+}
+
+class Celda {
+  - codigo: String
+  - piso: Integer
+  - estado: EstadoCelda
+  - placaActual: String
+  + asignarVehiculo(placa: String): Boolean
+  + liberarCelda(): Boolean
+  + estaDisponible(): Boolean
+}
+
+class RegistroAcceso {
+  - id: Integer
+  - fechaHoraEntrada: DateTime
+  - fechaHoraSalida: DateTime
+  - tipoServicio: TipoServicio
+  - minutosTranscurridos: Integer
+  - totalPagar: Double
+  - estado: EstadoAcceso
+  - observacionesIngreso: String
+  - operadorEntrada: String
+  - operadorSalida: String
+  + calcularTiempoEstancia(): Integer
+  + liquidarSalida(tarifaHora: Double): Double
+  + cerrarRegistro(operador: String): Void
+}
+
+class Novedad {
+  - id: Integer
+  - fechaHora: DateTime
+  - tipoNovedad: TipoNovedad
+  - nivelGravedad: NivelGravedad
+  - descripcion: String
+  - ubicacionEnVehiculo: String
+  + registrarDetalle(obs: String): Void
+}
+
+' Relaciones
+Cliente "1" o-- "0..*" Vehiculo : es propietario de >
+Cliente "1" *-- "0..*" Mensualidad : contrata >
+Mensualidad "1" --> "1" Vehiculo : aplica a >
+
+Vehiculo "1" --> "1" TipoVehiculo : clasificado como >
+Celda "1" --> "1" TipoVehiculo : acondicionada para >
+
+Celda "1" o-- "0..1" Vehiculo : aloja temporalmente >
+
+Vehiculo "1" *-- "0..*" RegistroAcceso : genera historial >
+Celda "1" *-- "0..*" RegistroAcceso : registra ocupación >
+
+RegistroAcceso "1" *-- "0..*" Novedad : documenta incidentes >
+
+@enduml

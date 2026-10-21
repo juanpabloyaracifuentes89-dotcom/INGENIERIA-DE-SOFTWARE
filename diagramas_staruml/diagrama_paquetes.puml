@@ -1,0 +1,68 @@
+@startuml Diagrama_Paquetes_AutosColombia
+!theme plain
+skinparam defaultFontName Arial
+skinparam packageStyle folder
+
+title DIAGRAMA DE PAQUETES MODULAR - PARQUEADERO AUTOS COLOMBIA\n(Iteración 1: Gestión de Entrada y Salida de Vehículos)
+
+package "co.edu.autoscolombia.config" {
+  class DatabaseConfig
+  class EnvironmentSettings
+  class SchemaMigrator
+}
+
+package "co.edu.autoscolombia.presentation" {
+  component "Vistas Web (HTML/CSS)" as Views
+  component "Lógica de Interfaz (app.js)" as UIController
+  component "Generador de Tickets" as TicketRenderer
+}
+
+package "co.edu.autoscolombia.controllers" {
+  class ParkingController
+  class VehicleController
+  class NoveltyController
+  class CellController
+}
+
+package "co.edu.autoscolombia.services" {
+  interface IAccessService
+  interface IBillingService
+  interface ICellService
+  
+  class AccessServiceImpl
+  class BillingServiceImpl
+  class CellServiceImpl
+}
+
+package "co.edu.autoscolombia.models (Dominio)" {
+  class Vehiculo
+  class Celda
+  class RegistroAcceso
+  class Novedad
+  class Mensualidad
+  class Cliente
+  class TipoVehiculo
+}
+
+package "co.edu.autoscolombia.repositories (Persistencia)" {
+  interface ICeldaRepository
+  interface IRegistroAccesoRepository
+  interface IMensualidadRepository
+  interface INovedadRepository
+  
+  class SqliteCeldaRepository
+  class SqliteRegistroRepository
+}
+
+' Dependencias entre paquetes
+"co.edu.autoscolombia.presentation" ..> "co.edu.autoscolombia.controllers" : <<call>> (HTTP REST)
+"co.edu.autoscolombia.controllers" ..> "co.edu.autoscolombia.services" : <<delegate>>
+"co.edu.autoscolombia.controllers" ..> "co.edu.autoscolombia.models" : <<use>>
+
+"co.edu.autoscolombia.services" ..> "co.edu.autoscolombia.repositories" : <<access>>
+"co.edu.autoscolombia.services" ..> "co.edu.autoscolombia.models" : <<manipulate>>
+
+"co.edu.autoscolombia.repositories" ..> "co.edu.autoscolombia.models" : <<maps>>
+"co.edu.autoscolombia.repositories" ..> "co.edu.autoscolombia.config" : <<use connection>>
+
+@enduml

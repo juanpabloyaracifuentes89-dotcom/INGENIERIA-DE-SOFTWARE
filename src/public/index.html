@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autos Colombia - Sistema de Información de Parqueadero (EA1)</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <!-- ENCABEZADO Y BARRA SUPERIOR -->
+  <header class="top-nav">
+    <div class="brand">
+      <div class="logo-icon"><i class="fa-solid fa-square-parking"></i></div>
+      <div class="brand-text">
+        <h1>AUTOS COLOMBIA</h1>
+        <span>Gestión de Entrada y Salida de Vehículos &bull; Iteración 1</span>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="live-clock" id="liveClock"><i class="fa-regular fa-clock"></i> --:--:--</div>
+      <div class="operator-badge">
+        <i class="fa-solid fa-user-shield"></i>
+        <span>Operador: Juan Pérez</span>
+      </div>
+      <div class="system-status">
+        <span class="status-dot"></span> En línea (Local)
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <main class="main-container">
+    
+    <!-- TARJETAS DE ESTADÍSTICAS EN VIVO (KPIs) -->
+    <section class="stats-grid">
+      <div class="stat-card total-cells">
+        <div class="stat-icon"><i class="fa-solid fa-border-all"></i></div>
+        <div class="stat-data">
+          <span class="stat-number" id="kpiTotalCeldas">0</span>
+          <span class="stat-label">Celdas Totales</span>
+        </div>
+      </div>
+      <div class="stat-card available-cells">
+        <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+        <div class="stat-data">
+          <span class="stat-number" id="kpiDisponibles">0</span>
+          <span class="stat-label">Celdas Disponibles</span>
+        </div>
+      </div>
+      <div class="stat-card occupied-cells">
+        <div class="stat-icon"><i class="fa-solid fa-car-side"></i></div>
+        <div class="stat-data">
+          <span class="stat-number" id="kpiOcupadas">0</span>
+          <span class="stat-label">Vehículos Dentro</span>
+        </div>
+      </div>
+      <div class="stat-card monthly-cells">
+        <div class="stat-icon"><i class="fa-solid fa-id-card"></i></div>
+        <div class="stat-data">
+          <span class="stat-number" id="kpiMensualidades">0</span>
+          <span class="stat-label">Mensualidades Activas</span>
+        </div>
+      </div>
+      <div class="stat-card alerts-cells">
+        <div class="stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        <div class="stat-data">
+          <span class="stat-number" id="kpiNovedades">0</span>
+          <span class="stat-label">Novedades Registradas</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- BARRA DE ACCIONES RÁPIDAS -->
+    <section class="quick-actions-bar">
+      <div class="action-buttons">
+        <button class="btn btn-primary" id="btnOpenModalEntrada">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Registrar Entrada de Vehículo
+        </button>
+        <button class="btn btn-danger" id="btnOpenModalSalida">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Registrar Salida de Vehículo
+        </button>
+        <button class="btn btn-warning" id="btnOpenModalNovedad">
+          <i class="fa-solid fa-file-pen"></i> Reportar Novedad
+        </button>
+      </div>
+      <div class="search-filter">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="filterPlacaInput" placeholder="Buscar vehículo por placa o celda...">
+      </div>
+    </section>
+
+    <!-- PESTAÑAS DE VISUALIZACIÓN -->
+    <div class="tab-navigation">
+      <button class="tab-btn active" data-tab="tab-patio">
+        <i class="fa-solid fa-map-location-dot"></i> Mapa de Celdas de Patio
+      </button>
+      <button class="tab-btn" data-tab="tab-activos">
+        <i class="fa-solid fa-list-check"></i> Vehículos en Patio (<span id="countVehiculosAdentro">0</span>)
+      </button>
+      <button class="tab-btn" data-tab="tab-mensualidades">
+        <i class="fa-solid fa-address-book"></i> Clientes Mensuales
+      </button>
+      <button class="tab-btn" data-tab="tab-novedades">
+        <i class="fa-solid fa-clipboard-list"></i> Historial de Novedades
+      </button>
+    </div>
+
+    <!-- CONTENIDO DE PESTAÑAS -->
+    
+    <!-- 1. MAPA DE CELDAS -->
+    <section id="tab-patio" class="tab-content active">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-cubes-stacked"></i> Estado Gráfico de Celdas</h2>
+        <div class="map-legend">
+          <span class="legend-item"><span class="badge-dot dot-available"></span> Disponible</span>
+          <span class="legend-item"><span class="badge-dot dot-occupied"></span> Ocupada</span>
+          <span class="legend-item"><span class="badge-dot dot-maintenance"></span> Mantenimiento</span>
+        </div>
+      </div>
+      <div class="cells-grid" id="cellsGridContainer">
+        <!-- Renderizado dinámico de celdas -->
+      </div>
+    </section>
+
+    <!-- 2. LISTA DE VEHÍCULOS ACTIVOS -->
+    <section id="tab-activos" class="tab-content">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-list-ol"></i> Vehículos Actualmente en el Parqueadero</h2>
+        <button class="btn btn-sm btn-secondary" onclick="app.loadAllData()">
+          <i class="fa-solid fa-rotate"></i> Actualizar
+        </button>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table" id="tablaActivos">
+          <thead>
+            <tr>
+              <th>Placa</th>
+              <th>Tipo</th>
+              <th>Celda</th>
+              <th>Fecha y Hora Ingreso</th>
+              <th>Servicio</th>
+              <th>Propietario / Cliente</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyActivos">
+            <!-- Filas dinámicas -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 3. MENSUALIDADES REGISTRADAS -->
+    <section id="tab-mensualidades" class="tab-content">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-calendar-check"></i> Base de Contratos de Mensualidad</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Documento</th>
+              <th>Teléfono</th>
+              <th>Placa</th>
+              <th>Vehículo</th>
+              <th>Vigencia Desde</th>
+              <th>Vigencia Hasta</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyMensualidades">
+            <!-- Filas dinámicas -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 4. HISTORIAL DE NOVEDADES -->
+    <section id="tab-novedades" class="tab-content">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-triangle-exclamation"></i> Registro de Novedades e Incidentes</h2>
+      </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Fecha / Hora</th>
+              <th>Placa</th>
+              <th>Celda</th>
+              <th>Tipo Novedad</th>
+              <th>Gravedad</th>
+              <th>Ubicación en Vehículo</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyNovedades">
+            <!-- Filas dinámicas -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: REGISTRAR ENTRADA -->
+  <div class="modal-overlay" id="modalEntrada">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-arrow-right-to-bracket"></i> Registrar Entrada de Vehículo</h3>
+        <button class="close-modal" onclick="app.closeModal('modalEntrada')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formEntrada">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="inputPlacaEntrada">Placa del Vehículo <span class="req">*</span></label>
+              <div class="input-with-button">
+                <input type="text" id="inputPlacaEntrada" maxlength="8" placeholder="Ej: ABC123" required autocomplete="off">
+                <button type="button" class="btn btn-outline" id="btnValidarPlaca">Verificar</button>
+              </div>
+            </div>
+            <div class="form-group flex-1">
+              <label for="selectTipoVehiculo">Tipo de Vehículo <span class="req">*</span></label>
+              <select id="selectTipoVehiculo" required>
+                <option value="1">Automóvil ($4.500/h - $180.000/mes)</option>
+                <option value="2">Motocicleta ($2.500/h - $95.000/mes)</option>
+                <option value="3">Camioneta / SUV ($6.000/h - $220.000/mes)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Banner Informativo de Validación Automática -->
+          <div id="bannerValidacionPlaca" class="validation-banner hidden">
+            <!-- Se inyecta con JavaScript -->
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="selectCeldaEntrada">Asignar Celda Disponible <span class="req">*</span></label>
+              <select id="selectCeldaEntrada" required>
+                <!-- Opciones dinámicas de celdas disponibles -->
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="inputOperadorEntrada">Operador de Turno</label>
+              <input type="text" id="inputOperadorEntrada" value="Juan Pérez (Operador Patio)" readonly>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="inputMarca">Marca (Opcional)</label>
+              <input type="text" id="inputMarca" placeholder="Ej: Mazda">
+            </div>
+            <div class="form-group flex-1">
+              <label for="inputColor">Color (Opcional)</label>
+              <input type="text" id="inputColor" placeholder="Ej: Rojo">
+            </div>
+          </div>
+
+          <!-- SECCIÓN: REGISTRO DE NOVEDAD AL INGRESO -->
+          <div class="collapsible-section">
+            <div class="collapsible-toggle" id="toggleNovedadIngreso">
+              <input type="checkbox" id="checkTieneNovedad">
+              <label for="checkTieneNovedad"><i class="fa-solid fa-camera"></i> ¿El vehículo presenta golpes, rayones o novedades al ingresar?</label>
+            </div>
+            <div class="collapsible-content hidden" id="boxNovedadIngreso">
+              <div class="form-row">
+                <div class="form-group flex-1">
+                  <label>Tipo de Novedad</label>
+                  <select id="selectTipoNovedadIngreso">
+                    <option value="RAYÓN">Rayón superficial</option>
+                    <option value="GOLPE">Golpe / Abolladura</option>
+                    <option value="ROTURA_VIDRIO">Rotura de vidrio / Farola</option>
+                    <option value="ACCESORIO_FALTANTE">Accesorio faltante / Espejo</option>
+                    <option value="OTRO">Otro</option>
+                  </select>
+                </div>
+                <div class="form-group flex-1">
+                  <label>Nivel de Gravedad</label>
+                  <select id="selectGravedadIngreso">
+                    <option value="LEVE">Leve</option>
+                    <option value="MODERADA">Moderada</option>
+                    <option value="GRAVE">Grave</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Ubicación y Detalle de la Novedad</label>
+                <input type="text" id="inputUbicacionNovedad" placeholder="Ej: Puerta delantera derecha / Bomper trasero">
+              </div>
+              <div class="form-group">
+                <label>Descripción detallada</label>
+                <textarea id="inputDescNovedad" rows="2" placeholder="Describa el estado en el que ingresa el vehículo para respaldo legal..."></textarea>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalEntrada')">Cancelar</button>
+            <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check"></i> Confirmar Entrada e Imprimir Ticket</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR SALIDA Y LIQUIDACIÓN -->
+  <div class="modal-overlay" id="modalSalida">
+    <div class="modal-dialog">
+      <div class="modal-header header-salida">
+        <h3><i class="fa-solid fa-arrow-right-from-bracket"></i> Registrar Salida de Vehículo</h3>
+        <button class="close-modal" onclick="app.closeModal('modalSalida')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formSalida">
+          <div class="form-group">
+            <label for="selectVehiculoSalida">Seleccione el Vehículo a dar salida <span class="req">*</span></label>
+            <select id="selectVehiculoSalida" required>
+              <option value="">-- Seleccionar vehículo presente en patio --</option>
+            </select>
+          </div>
+
+          <!-- RESUMEN DE LIQUIDACIÓN DE SALIDA -->
+          <div id="resumenSalidaBox" class="resumen-ticket-box hidden">
+            <!-- Generado con JS -->
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalSalida')">Cerrar</button>
+            <button type="submit" class="btn btn-danger" id="btnConfirmarSalida" disabled>
+              <i class="fa-solid fa-check-double"></i> Confirmar Salida y Liberar Celda
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR NOVEDAD INDEPENDIENTE -->
+  <div class="modal-overlay" id="modalNovedad">
+    <div class="modal-dialog">
+      <div class="modal-header header-warning">
+        <h3><i class="fa-solid fa-file-pen"></i> Registrar Novedad en Patio</h3>
+        <button class="close-modal" onclick="app.closeModal('modalNovedad')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formNovedadIndependiente">
+          <div class="form-group">
+            <label for="selectPlacaNovedad">Vehículo en Patio <span class="req">*</span></label>
+            <select id="selectPlacaNovedad" required>
+              <!-- Dinámico -->
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label>Tipo de Incidente</label>
+              <select id="selectTipoNovIndep">
+                <option value="GOLPE">Golpe / Choque</option>
+                <option value="RAYÓN">Rayón</option>
+                <option value="OBJETO_VALOR">Objeto de valor a la vista</option>
+                <option value="ALARMA">Alarma activada prolongada</option>
+                <option value="OTRO">Otro</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label>Nivel de Gravedad</label>
+              <select id="selectGravedadNovIndep">
+                <option value="LEVE">Leve</option>
+                <option value="MODERADA">Moderada</option>
+                <option value="GRAVE">Grave / Urgente</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Ubicación</label>
+            <input type="text" id="inputUbicacionNovIndep" placeholder="Ej: Costado lateral izquierdo">
+          </div>
+          <div class="form-group">
+            <label>Descripción de lo ocurrido <span class="req">*</span></label>
+            <textarea id="inputDescNovIndep" rows="3" required placeholder="Detalle de la novedad..."></textarea>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalNovedad')">Cancelar</button>
+            <button type="submit" class="btn btn-warning"><i class="fa-solid fa-floppy-disk"></i> Guardar Novedad</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: RECIBO / TICKET GENERADO -->
+  <div class="modal-overlay" id="modalTicket">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-receipt"></i> Comprobante de Operación</h3>
+        <button class="close-modal" onclick="app.closeModal('modalTicket')">&times;</button>
+      </div>
+      <div class="modal-body" id="ticketContent">
+        <!-- Renderizado dinámico del ticket -->
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary btn-block" onclick="window.print()">
+          <i class="fa-solid fa-print"></i> Imprimir Comprobante
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICACIONES -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>

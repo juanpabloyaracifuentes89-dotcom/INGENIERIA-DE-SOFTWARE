@@ -1,0 +1,101 @@
+@startuml Modelo_Entidad_Relacion_AutosColombia
+!theme plain
+skinparam defaultFontName Arial
+skinparam roundCorner 8
+
+title MODELO ENTIDAD-RELACIÓN / RELACIONAL - PARQUEADERO AUTOS COLOMBIA\n(Iteración 1: Gestión de Entrada y Salida de Vehículos)
+
+entity "tipos_vehiculo" as TV {
+  * id : INTEGER <<PK, AUTOINCREMENT>>
+  --
+  * nombre : VARCHAR(50) <<UNIQUE>>
+  * tarifa_hora : REAL
+  * tarifa_dia : REAL
+  * tarifa_mes : REAL
+  icono : VARCHAR(30)
+}
+
+entity "clientes" as C {
+  * id : INTEGER <<PK, AUTOINCREMENT>>
+  --
+  * documento : VARCHAR(20) <<UNIQUE>>
+  * nombres : VARCHAR(100)
+  * apellidos : VARCHAR(100)
+  * telefono : VARCHAR(20)
+  email : VARCHAR(120)
+  * estado : VARCHAR(20)
+  fecha_creacion : DATETIME
+}
+
+entity "vehiculos" as V {
+  * placa : VARCHAR(10) <<PK>>
+  --
+  * id_tipo_vehiculo : INTEGER <<FK>>
+  marca : VARCHAR(50)
+  modelo : VARCHAR(50)
+  color : VARCHAR(30)
+  id_cliente : INTEGER <<FK, NULLABLE>>
+}
+
+entity "mensualidades" as M {
+  * id : INTEGER <<PK, AUTOINCREMENT>>
+  --
+  * id_cliente : INTEGER <<FK>>
+  * placa : VARCHAR(10) <<FK>>
+  * fecha_inicio : DATE
+  * fecha_fin : DATE
+  * valor_pagado : REAL
+  * estado : VARCHAR(20)
+  fecha_registro : DATETIME
+}
+
+entity "celdas" as CEL {
+  * codigo : VARCHAR(10) <<PK>>
+  --
+  * id_tipo_vehiculo : INTEGER <<FK>>
+  * piso : INTEGER
+  * estado : VARCHAR(20)
+  placa_actual : VARCHAR(10) <<FK, NULLABLE>>
+}
+
+entity "registros_acceso" as RA {
+  * id : INTEGER <<PK, AUTOINCREMENT>>
+  --
+  * placa : VARCHAR(10) <<FK>>
+  * codigo_celda : VARCHAR(10) <<FK>>
+  * fecha_hora_entrada : DATETIME
+  fecha_hora_salida : DATETIME
+  * tipo_servicio : VARCHAR(20)
+  minutos_transcurridos : INTEGER
+  total_pagar : REAL
+  * estado : VARCHAR(20)
+  observaciones_ingreso : TEXT
+  operador_entrada : VARCHAR(50)
+  operador_salida : VARCHAR(50)
+}
+
+entity "novedades" as N {
+  * id : INTEGER <<PK, AUTOINCREMENT>>
+  --
+  * id_registro_acceso : INTEGER <<FK>>
+  * placa : VARCHAR(10) <<FK>>
+  * fecha_hora : DATETIME
+  * tipo_novedad : VARCHAR(30)
+  * nivel_gravedad : VARCHAR(20)
+  * descripcion : TEXT
+  ubicacion_en_vehiculo : VARCHAR(50)
+}
+
+' Relaciones con Cardinalidad
+TV ||--o{ V : "clasifica a"
+TV ||--o{ CEL : "habilita a"
+C  o|--o{ V : "es propietario de"
+C  ||--o{ M : "paga contrato de"
+V  ||--o{ M : "está asociado a"
+V  o|--o{ CEL : "ocupa temporalmente"
+V  ||--o{ RA : "registra accesos en"
+CEL ||--o{ RA : "aloja en"
+RA ||--o{ N : "presenta"
+V  ||--o{ N : "recibe reporte de"
+
+@enduml
