@@ -1,75 +1,75 @@
 # Sistema de Información Parqueadero "Autos Colombia"
-## Asignatura: Ingeniería de Software • Evidencia de Aprendizaje 1 (EA1)
-### Iteración 1: Gestión de la Entrada y Salida de Vehículos
+## Asignatura: Ingeniería de Software
+### Evidencia de Aprendizaje 1 (EA1) - Iteración 1: Gestión de la Entrada y Salida de Vehículos
 
-Este repositorio contiene la solución completa de ingeniería de software para el parqueadero **Autos Colombia**, enfocado en la gestión operativa de entradas, salidas, control de mensualidades, monitoreo de celdas en tiempo real y libro de novedades vehiculares.
+- **Estudiante:** Juan Pablo Yara Cifuentes
+- **Grupo:** PREICA2602B020081
+- **Institución:** Institución Universitaria Digital de Antioquia - IU Digital
+- **Materia:** Ingeniería de Software
+
+Este repositorio contiene la solución de software desarrollada para el parqueadero **Autos Colombia**, enfocada en la gestión operativa de entradas, salidas, control de mensualidades, monitoreo de celdas en tiempo real y registro de novedades vehiculares.
 
 ---
 
-## 🚀 Características Principales (Iteración 1)
+## Características Principales (Iteración 1)
 
 - **Control de Patio en Tiempo Real:** Visualización gráfica e interactiva de celdas organizadas por tipo de vehículo (Automóviles, Motocicletas, Camionetas) y estado (Disponible, Ocupada, Mantenimiento).
-- **Validación Automática de Mensualidades:** Al ingresar la placa del vehículo, el sistema verifica de forma instantánea si el conductor posee un contrato de mensualidad vigente, exonerando el cobro en la salida ($0 COP) o derivándolo a cobro por fracción/hora para visitantes ocasionales.
+- **Validación Automática de Mensualidades:** Verificación instantánea de contratos vigentes por placa, exonerando cobros en la salida ($0 COP) para clientes mensuales y derivando a cobro por fracción/hora para visitantes ocasionales.
 - **Asignación y Liberación Dinámica de Celdas:** Actualización atómica en la base de datos de la celda ocupada y liberación inmediata al registrar la salida.
-- **Registro de Novedades e Incidentes:** Módulo para documentar rayones, golpes, accesorios faltantes o averías preexistentes al momento del ingreso o durante la estancia, con tipificación de gravedad y ubicación.
-- **Liquidación Automática y Emisión de Tickets:** Cálculo del tiempo transcurrido en minutos/horas, cálculo del monto a pagar según las tarifas vigentes y generación de tickets imprimibles de entrada y salida con soporte para póliza contractual.
-- **Arquitectura en 3 Capas:** Separación limpia de presentación (HTML5/CSS3/JS modular), lógica de negocio (Express.js REST API) y persistencia relacional con transacciones (SQLite / PostgreSQL).
+- **Control Anti-Passback:** Bloqueo de ingresos duplicados para vehículos que ya figuren dentro de las instalaciones.
+- **Registro de Novedades e Incidentes:** Módulo de inspección para documentar rayones, golpes o accesorios faltantes preexistentes al ingreso para respaldo legal.
+- **Liquidación Automática y Emisión de Tickets:** Cálculo del tiempo transcurrido en minutos/horas y liquidación tarifaria con generación de tickets imprimibles.
+- **Arquitectura en Tres Capas:** Separación limpia de presentación (HTML5/CSS3/JS), lógica de negocio (Express.js REST API) y persistencia relacional con transacciones (SQLite / SQL).
 
 ---
 
-## 🛠️ Tecnologías Empleadas
+## Tecnologías Empleadas
 
-- **Backend:** Node.js (v20+ / v24+), Express.js.
-- **Base de Datos:** SQLite embebido nativo (`node:sqlite`) con soporte de claves foráneas y scripts DDL estándar compatibles con PostgreSQL / MySQL.
-- **Frontend:** HTML5 semántico, CSS3 moderno con variables y Flexbox/CSS Grid, JavaScript ES6 (Fetch API, eventos asíncronos).
-- **Modelado y Arquitectura:** StarUML (diagramas de Casos de Uso, Clases, Paquetes, Arquitectura), PlantUML, Figma (Mockups).
+- **Backend:** Node.js (v20+ / v24+), Express.js, Cors, Morgan.
+- **Base de Datos:** SQLite embebido nativo (`node:sqlite`) con soporte de claves foráneas, restricciones de integridad referencial y scripts DDL estándar.
+- **Frontend:** HTML5 semántico, CSS3 moderno con variables y Flexbox/CSS Grid, JavaScript ES6 (Fetch API, manipulación del DOM asíncrona).
+- **Modelado:** Draw.io (diagramas.net), UML (Casos de Uso, Clases, Paquetes, Arquitectura), Figma (Mockups).
 
 ---
 
-## 📂 Estructura del Repositorio
+## Estructura del Repositorio
 
 ```text
 ├── database/
-│   ├── schema.sql                    # Modelo Físico DDL (tablas, constraints, índices)
-│   ├── seed.sql                      # Datos iniciales de prueba (celdas, clientes, mensualidades)
-│   └── parqueadero.db                # Base de datos SQLite (se genera automáticamente al iniciar)
+│   ├── schema.sql                    # Script DDL de creación de tablas, restricciones e índices
+│   └── seed.sql                      # Datos iniciales para pruebas (celdas, clientes, mensualidades)
 ├── diagramas_staruml/
-│   ├── arquitectura_sistema.puml      # Diagrama de Arquitectura en Capas
+│   ├── arquitectura_sistema.puml      # Diagrama de Arquitectura en Tres Capas
 │   ├── casos_de_uso.puml              # Diagrama de Casos de Uso UML
 │   ├── diagrama_clases.puml           # Diagrama de Clases del Dominio
 │   ├── diagrama_paquetes.puml         # Diagrama de Paquetes Modular
-│   ├── modelo_er.puml                 # Modelo Entidad-Relación y Relacional
-│   └── guia_staruml_paso_a_paso.md    # Instrucciones detalladas para StarUML
-├── figma_mockups/
-│   └── guia_mockups_figma.md          # Especificación de interfaz, colores y wireframes
+│   └── modelo_er.puml                 # Modelo Entidad-Relación y Relacional
 ├── src/
 │   ├── config/
 │   │   └── database.js               # Conexión y auto-migración SQLite
 │   ├── controllers/
-│   │   └── parkingController.js      # Controlador de entradas, salidas, celdas y cobros
+│   │   └── parkingController.js      # Controlador de entradas, salidas, celdas y liquidación
 │   ├── routes/
-│   │   └── api.js                    # Endpoints de la API REST
+│   │   └── api.js                    # Enrutador de la API REST
 │   ├── public/
-│   │   ├── index.html                # Interfaz web del operador de patio
+│   │   ├── index.html                # Interfaz web del operador
 │   │   ├── css/styles.css            # Estilos corporativos de Autos Colombia
-│   │   └── js/app.js                 # Lógica cliente y consumo de API
+│   │   └── js/app.js                 # Lógica cliente y consumo de endpoints
 │   └── server.js                     # Servidor HTTP Express principal
-├── Autos_Colombia_EA1_Documento.docx  # Documento final editable listo para entrega en Word
-├── Autos_Colombia_EA1_Documento.md    # Informe técnico completo en Markdown
+├── .gitignore
 ├── package.json
 └── README.md
 ```
 
 ---
 
-## ⚡ Instrucciones de Instalación y Ejecución Local
+## Instrucciones de Instalación y Ejecución Local
 
 ### 1. Prerrequisitos
 Tener instalado Node.js (versión 20 o superior).
 
-### 2. Clonar o descargar el proyecto
+### 2. Clonar o descargar el repositorio
 ```bash
-cd "INGENIERIA DE SOFTWARE"
 ```
 
 ### 3. Instalar dependencias
@@ -82,37 +82,21 @@ npm install
 npm start
 ```
 
-### 5. Abrir en el navegador
-Ingresa a: **[http://localhost:3000](http://localhost:3000)**
+### 5. Acceder a la interfaz web
+Abrir el navegador web en: **http://localhost:3000**
 
 ---
 
-## 📤 Instrucciones para Subir a GitHub (Punto 9)
+## Datos de Prueba Incluidos
 
-Si vas a subir este proyecto a tu propia cuenta de GitHub, sigue estos sencillos comandos en tu terminal de PowerShell o Git Bash:
+El sistema inicializa automáticamente una base de datos con los siguientes registros de prueba para validar los flujos operativos:
 
-1. **Crear un repositorio vacío en GitHub:**
-   - Ve a [GitHub.com](https://github.com/new).
-   - Crea un repositorio llamado `autos-colombia-parqueadero` (puedes dejarlo Público).
-   - No marques "Add README" ni ".gitignore" (ya los tenemos creados localmente).
-
-2. **Vincular y subir tus archivos locales:**
-```bash
-# 1. Verificar estado de git
-git status
-
-# 2. Agregar todos los archivos
-git add .
-
-# 3. Realizar el commit
-git commit -m "feat: entrega completa Iteración 1 - Sistema Parqueadero Autos Colombia EA1"
-
-# 4. Asignar rama principal
-git branch -M main
-
-# 5. Conectar con tu repositorio remoto (reemplaza TU_USUARIO por tu usuario real)
-git remote add origin https://github.com/TU_USUARIO/autos-colombia-parqueadero.git
-
-# 6. Subir el código
-git push -u origin main
-```
+- **Celdas:** 12 celdas configuradas (A-01 a A-08 para Automóviles y Camionetas; M-01 a M-04 para Motocicletas).
+- **Clientes con Mensualidad Vigente:**
+  - Placa `ABC123`: Carlos Gómez (Mazda 3 - Celda A-01).
+  - Placa `XYZ789`: Mariana López (Yamaha MT-03 - Celda M-01).
+  - Placa `DEF321`: Diana Marcela Ospina (Renault Logan).
+- **Cliente con Mensualidad Vencida:**
+  - Placa `UVW456`: Juan Ramírez (Toyota Fortuner).
+- **Visitante Ocasional:**
+  - Placa `QWE987`: Chevrolet Onix.
