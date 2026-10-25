@@ -303,10 +303,30 @@ def create_document():
     # 6. MOCKUPS EN FIGMA
     # ==========================================
     add_h1("5. ENTREGABLE 4: MOCKUPS DE LAS HISTORIAS DE USUARIO EN FIGMA")
-    add_p("El diseño de interfaz (UI/UX) se fundamentó en un Sistema de Diseño con contraste optimizado para entornos de caseta:")
-    add_p("• Paleta Cromática: Azul Primario (#1E3A8A), Verde Éxito (#10B981) para disponibles, Rojo Alerta (#EF4444) para ocupadas, y Amarillo (#FEF08A) para placas vehiculares colombianas.")
-    add_p("• Pantallas Diseñadas en el Flujo:\n  1. Dashboard de Patio: Cuadrícula interactiva con las 12 celdas de patio y contadores KPI en vivo.\n  2. Modal de Entrada: Formulario con verificación de placa, banner de mensualidad y acordeón de novedades.\n  3. Modal de Salida: Resumen de permanencia, horas liquidadas y valor total.\n  4. Ticket de Comprobante: Formato para impresora térmica con datos fiscales y póliza civil.\n  5. Libro de Novedades: Tabla histórica de incidentes tipificados.")
-    add_p("Nota de Figma: Los wireframes y lineamientos para replicar o enlazar el prototipo interactivo en Figma se encuentran detallados en 'figma_mockups/guia_mockups_figma.md'.", italic=True)
+    add_p("El diseño de interfaz de usuario (UI/UX) se fundamentó en un Sistema de Diseño riguroso y en la generación de wireframes y prototipos interactivos asistidos por Inteligencia Artificial en Figma, asegurando la resolución completa de todas las especificaciones operativas del parqueadero Autos Colombia:")
+    add_p("• Paleta Cromática y Tokens: Azul Primario (#1E3A8A) para cabeceras y acciones principales, Verde Éxito (#10B981) para celdas y mensualidades activas, Rojo Alerta (#EF4444) para celdas ocupadas y salidas, Ámbar (#F59E0B) para mantenimiento, y Amarillo (#FEF08A) para placas vehiculares colombianas.")
+    add_p("• Pantallas Prototipadas en el Flujo Operativo:\n  1. Dashboard de Patio: Cuadrícula interactiva con las 12 celdas de patio y contadores KPI en vivo.\n  2. Modal de Entrada: Formulario con verificación de placa, banner de mensualidad activa y acordeón de novedades.\n  3. Modal de Salida: Resumen de permanencia, horas liquidadas y valor total ($0 para mensualidad).\n  4. Ticket de Comprobante: Formato para impresora térmica con datos fiscales y póliza civil.\n  5. Libro de Novedades y Mensualidades: Tablas de control y auditoría.")
+
+    add_h2("5.1 Prompts de IA para Figma (Generación Automatizada de Mockups)")
+    add_p("Para la creación de los mockups mediante asistentes de Inteligencia Artificial (Figma AI First Draft, Musho AI, Wireframe Designer, Galileo AI), se diseñó un catálogo exhaustivo de prompts contextualizados en español e inglés, almacenados en la carpeta 'figma_mockups/prompts_figma_ai.md'.")
+    
+    add_box("Prompt Maestro para Figma AI - Pantalla Principal (Dashboard de Celdas)",
+            "Generate a full desktop dashboard screen (1440x900) for a parking management web app called 'Autos Colombia'.\n"
+            "Key sections:\n"
+            "- Navbar: Navy blue (#1E3A8A), parking logo, digital clock, operator badge 'Juan Perez', online status.\n"
+            "- KPI Row: 5 summary cards (Total Spots: 12, Available: 9 [Green], Occupied: 2 [Red], Monthly: 2, Alerts: 1).\n"
+            "- Actions: '+ Register Vehicle Entry', '- Register Vehicle Exit', '⚠️ Report Damage', search bar.\n"
+            "- Parking Bay Grid: 12 cards (A-01 to A-08 for cars, M-01 to M-04 for bikes). Available bays in green with hourly rate. Occupied bays in red with yellow license plate badge ('ABC123'), service tag, entry time.")
+
+    add_box("Prompt Maestro para Figma AI - Modal de Entrada Asistida",
+            "Design a modal dialog (620px) for 'Register Vehicle Entry' in Autos Colombia.\n"
+            "- Plate input with 'Verify' button. Vehicle type selector.\n"
+            "- Auto-validation banner: Green box showing 'ACTIVE MONTHLY SUBSCRIPTION VERIFIED - Carlos Gomez - Exit fee $0 COP'.\n"
+            "- Dropdown 'Assign Available Bay' showing floor and status.\n"
+            "- Damage inspection box: checkbox for scratches/dents, severity level, location, description notes.\n"
+            "- Buttons: Cancel and 'Confirm Entry & Print Ticket'.")
+
+    add_p("Nota de Figma: Los wireframes completos, directrices y todos los prompts adicionales en español e inglés se encuentran disponibles en 'figma_mockups/prompts_figma_ai.md' y 'figma_mockups/guia_mockups_figma.md'.", italic=True)
 
     # ==========================================
     # 7. MODELOS DE DATOS (MER, MR Y FÍSICO)

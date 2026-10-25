@@ -410,6 +410,14 @@ Calcula en tiempo real los minutos y horas transcurridas y fija el valor exacto 
 #### Pantalla 4: Ticket Térmico de Entrada y Salida (HU-06)
 Comprobante con membrete corporativo, NIT, código de registro, celda asignada, hora de ingreso y estipulación de póliza civil.
 
+### 5.3 Catálogo de Prompts de Inteligencia Artificial para Figma (Generación Automatizada)
+Para optimizar el diseño y permitir la generación de interfaces mediante herramientas de IA en Figma (**Figma AI / First Draft**, **Musho AI**, **Wireframe Designer**, **Galileo AI**, **Relume**), se estructuraron prompts detallados en español e inglés en el archivo [`figma_mockups/prompts_figma_ai.md`](file:///c:/Users/USER/Desktop/Universidad/SEMESTRE%206/BLOQUE%202/INGENIERIA%20DE%20SOFTWARE/figma_mockups/prompts_figma_ai.md).
+
+Cada prompt define:
+- **Resolución y Plataforma:** Desktop 1440x900 px.
+- **Tokens de Diseño:** Colores corporativos (`#1E3A8A`, `#10B981`, `#EF4444`, `#F59E0B`, `#FEF08A`).
+- **Jerarquía y Componentes:** Navbar con reloj en vivo y operador, tarjetas KPI, barras de búsqueda, cuadrícula de celdas con estados de disponibilidad, modales interactivos con banner de validación de mensualidad ($0 COP) y acordeón de inspección de daños preexistentes.
+
 ---
 
 ## 6. PUNTO 5: MER, MR Y MODELO FÍSICO
