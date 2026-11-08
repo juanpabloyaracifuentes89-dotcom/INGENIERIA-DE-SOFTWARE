@@ -1,108 +1,142 @@
 # Sistema de Información Parqueadero "Autos Colombia"
+
 ## Asignatura: Ingeniería de Software
-### Evidencia de Aprendizaje 2 (EA2) - Iteración 2: Gestión de Usuarios y Gestión de Celdas
+### Evidencia de Aprendizaje 2 (EA2) — Iteración 2: Gestión de Usuarios y Gestión de Celdas
 
-- **Estudiante:** Juan Pablo Yara Cifuentes
-- **Grupo:** PREICA2602B020081
-- **Institución:** Institución Universitaria Digital de Antioquia - IU Digital
-- **Materia:** Ingeniería de Software
-
-Este repositorio contiene la evolución del software desarrollado para el parqueadero **Autos Colombia**, integrando los módulos de la **Iteración 1** (control de entradas, salidas, celdas y novedades) y de la **Iteración 2** (gestión de usuarios/clientes y administración de celdas).
-
----
-
-## Características Principales (Iteraciones 1 y 2)
-
-### Iteración 1: Gestión de Entrada y Salida de Vehículos
-- Control de patio en tiempo real con visualización gráfica de celdas.
-- Validación automática de mensualidades y control anti-passback.
-- Asignación asistida y liberación de celdas de parqueo.
-- Registro de novedades e incidentes preexistentes al ingreso.
-- Liquidación automática y generación de tickets imprimibles.
-
-### Iteración 2: Gestión de Usuarios y Gestión de Celdas
-- **CRUD de Clientes y Usuarios:** Módulo administrativo para registrar clientes capturando documento, nombres, teléfono y correo electrónico con validación de unicidad.
-- **Vinculación Vehicular:** Asociación de uno o más automotores (placas) a un cliente titular con emisión de mensualidades.
-- **Configuración de Celdas:** Parametrización de nuevas celdas indicando código identificador único, piso de ubicación y categoría vehicular permitida.
-- **Gestión de Estados de Celda (Mantenimiento):** Bloqueo preventivo de celdas inhabilitadas por averías locativas, excluyéndolas automáticamente del flujo de ingreso de vehículos.
-- **Control de Aforo Dinámico:** Cálculo reactivo de capacidad total, cupos ocupados y porcentaje de ocupación en patio.
+| Campo | Detalle |
+|---|---|
+| **Estudiante** | Juan Pablo Yara Cifuentes |
+| **Grupo** | PREICA2602B020081 |
+| **Institución** | Institución Universitaria Digital de Antioquia |
+| **Docente** | Esteban Montoya |
+| **Fecha de entrega** | Noviembre 8 de 2026 |
+| **Programa** | Tecnología en Desarrollo de Software |
 
 ---
 
-## Tecnologías Empleadas
+## ¿De qué trata este proyecto?
 
-- **Backend:** Node.js (v20+ / v24+), Express.js, Cors, Morgan.
-- **Base de Datos:** SQLite embebido nativo (`node:sqlite`) con soporte de claves foráneas, restricciones de integridad referencial y scripts DDL estándar.
-- **Frontend:** HTML5 semántico, CSS3 moderno con variables y Flexbox/CSS Grid, JavaScript ES6 (Fetch API, manipulación del DOM asíncrona).
-- **Modelado:** Draw.io (diagramas.net), UML (Casos de Uso, Clases, Paquetes, Arquitectura), Figma (Mockups).
+Este repositorio contiene el sistema de información del parqueadero **Autos Colombia**, desarrollado de forma evolutiva en iteraciones dentro de la asignatura Ingeniería de Software.
+
+La **Iteración 2** extiende las funcionalidades del sistema incorporando los módulos de **gestión administrativa de clientes/usuarios** y **configuración dinámica de celdas de parqueo**, integrando todo con los flujos operativos de la Iteración 1.
 
 ---
 
-## Estructura del Repositorio
+## Qué hace el sistema (Iteraciones 1 y 2)
 
-```text
+### Iteración 1 — Control de Entrada y Salida de Vehículos
+- Mapa visual interactivo del patio con estado en tiempo real (Disponible, Ocupada, Mantenimiento).
+- Validación automática de mensualidades vigentes al momento del ingreso.
+- Asignación de celda y registro del ticket de entrada.
+- Liquidación automática del cobro al registrar la salida (por horas o mensualidad).
+- Registro de novedades e incidentes detectados al ingreso del vehículo.
+
+### Iteración 2 — Gestión de Usuarios y Celdas
+- **Registro de Clientes:** Guardar, editar y desactivar clientes con validación de cédula única.
+- **Vinculación de Vehículos:** Asociar una o varias placas a un cliente titular para contratos de mensualidad.
+- **Crear Celdas:** Parametrizar nuevos puestos de parqueo con código único, piso y tipo de vehículo.
+- **Mantenimiento de Celdas:** Bloquear preventivamente celdas con daños locativos (fugas, baches, pintura), excluyéndolas del flujo de ingreso automáticamente.
+- **Aforo en Tiempo Real:** Tarjetas de control con cupos totales, ocupados, libres y porcentaje de ocupación.
+
+---
+
+## Tecnologías usadas
+
+| Capa | Tecnología |
+|---|---|
+| Servidor (Backend) | Node.js v20+, Express.js, Morgan, Cors |
+| Base de Datos | SQLite nativo (`node:sqlite`) con claves foráneas activas |
+| Interfaz (Frontend) | HTML5, CSS3 con variables y Grid, JavaScript ES6 Vanilla |
+| Diagramas UML | Draw.io (diagramas.net) con PlantUML |
+| Mockups | Prototipado de alta fidelidad sobre el sistema real |
+
+---
+
+## Estructura del proyecto
+
+```
+INGENIERIA-DE-SOFTWARE/
 ├── database/
-│   ├── schema.sql                    # Script DDL de creación de tablas, restricciones e índices
-│   └── seed.sql                      # Datos iniciales para pruebas (celdas, clientes, mensualidades)
-├── diagramas_staruml/
-│   ├── arquitectura_sistema.puml      # Diagrama de Arquitectura en Tres Capas
-│   ├── casos_de_uso.puml              # Diagrama de Casos de Uso UML
-│   ├── diagrama_clases.puml           # Diagrama de Clases del Dominio
-│   ├── diagrama_paquetes.puml         # Diagrama de Paquetes Modular
-│   └── modelo_er.puml                 # Modelo Entidad-Relación y Relacional
+│   ├── schema.sql          # Creación de tablas e índices
+│   └── seed.sql            # Datos iniciales de prueba
 ├── src/
 │   ├── config/
-│   │   └── database.js               # Conexión y auto-migración SQLite
+│   │   └── database.js     # Conexión y auto-migración SQLite
 │   ├── controllers/
-│   │   └── parkingController.js      # Controlador de entradas, salidas, celdas y liquidación
+│   │   └── parkingController.js  # Toda la lógica de negocio (Iter. 1 y 2)
 │   ├── routes/
-│   │   └── api.js                    # Enrutador de la API REST
+│   │   └── api.js          # Rutas de la API REST
 │   ├── public/
-│   │   ├── index.html                # Interfaz web del operador
-│   │   ├── css/styles.css            # Estilos corporativos de Autos Colombia
-│   │   └── js/app.js                 # Lógica cliente y consumo de endpoints
-│   └── server.js                     # Servidor HTTP Express principal
-├── .gitignore
+│   │   ├── index.html      # Interfaz web completa
+│   │   ├── css/styles.css  # Estilos del sistema
+│   │   └── js/app.js       # Lógica del frontend
+│   └── server.js           # Servidor Express principal
 ├── package.json
 └── README.md
 ```
 
 ---
 
-## Instrucciones de Instalación y Ejecución Local
+## Cómo ejecutar el proyecto localmente
 
-### 1. Prerrequisitos
-Tener instalado Node.js (versión 20 o superior).
+### Requisitos previos
+- Tener instalado **Node.js versión 20 o superior**.
 
-### 2. Clonar o descargar el repositorio
+### Pasos
+
+**1. Clonar el repositorio:**
 ```bash
+git clone https://github.com/juanpabloyaracifuentes89-dotcom/INGENIERIA-DE-SOFTWARE.git
 ```
 
-### 3. Instalar dependencias
+**2. Entrar a la carpeta del proyecto:**
+```bash
+cd INGENIERIA-DE-SOFTWARE
+```
+
+**3. Instalar dependencias:**
 ```bash
 npm install
 ```
 
-### 4. Iniciar la aplicación
+**4. Iniciar la aplicación:**
 ```bash
 npm start
 ```
 
-### 5. Acceder a la interfaz web
-Abrir el navegador web en: **http://localhost:3000**
+**5. Abrir en el navegador:**
+```
+http://localhost:3000
+```
 
 ---
 
-## Datos de Prueba Incluidos
+## Datos de prueba incluidos
 
-El sistema inicializa automáticamente una base de datos con los siguientes registros de prueba para validar los flujos operativos:
+Al iniciar por primera vez, el sistema carga automáticamente los siguientes datos de prueba:
 
-- **Celdas:** 12 celdas configuradas (A-01 a A-08 para Automóviles y Camionetas; M-01 a M-04 para Motocicletas).
-- **Clientes con Mensualidad Vigente:**
-  - Placa `ABC123`: Carlos Gómez (Mazda 3 - Celda A-01).
-  - Placa `XYZ789`: Mariana López (Yamaha MT-03 - Celda M-01).
-  - Placa `DEF321`: Diana Marcela Ospina (Renault Logan).
-- **Cliente con Mensualidad Vencida:**
-  - Placa `UVW456`: Juan Ramírez (Toyota Fortuner).
-- **Visitante Ocasional:**
-  - Placa `QWE987`: Chevrolet Onix.
+| Placa | Cliente | Vehículo | Estado |
+|---|---|---|---|
+| ABC123 | Carlos Gómez | Mazda 3 — Celda A-01 | Mensualidad Vigente |
+| XYZ789 | Mariana López | Yamaha MT-03 — Celda M-01 | Mensualidad Vigente |
+| DEF321 | Diana Marcela Ospina | Renault Logan | Mensualidad Vigente |
+| UVW456 | Juan Ramírez | Toyota Fortuner | Mensualidad Vencida |
+| QWE987 | Visitante | Chevrolet Onix | Ocasional |
+
+---
+
+## Endpoints de la API REST
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/celdas` | Consultar todas las celdas y su estado |
+| POST | `/api/celdas` | Crear nueva celda (Iter. 2) |
+| PUT | `/api/celdas/:codigo/estado` | Cambiar estado de celda a Mantenimiento (Iter. 2) |
+| POST | `/api/clientes` | Registrar nuevo cliente con vehículo (Iter. 2) |
+| GET | `/api/vehiculos/validar/:placa` | Validar placa y mensualidad vigente |
+| POST | `/api/entradas` | Registrar entrada de vehículo |
+| POST | `/api/salidas` | Registrar salida y liquidar cobro |
+| GET | `/api/mensualidades` | Listar contratos de mensualidad |
+| GET | `/api/novedades` | Listar novedades registradas |
+| POST | `/api/novedades` | Registrar novedad de un vehículo |
+| GET | `/api/stats` | Estadísticas de aforo en tiempo real |
