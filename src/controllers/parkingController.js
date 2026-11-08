@@ -408,6 +408,133 @@ const parkingController = {
     } catch (error) {
       return res.status(500).json({ success: false, message: 'Error al obtener estadísticas', error: error.message });
     }
+  },
+
+  // =========================================================================
+  // ITERACIÓN 2: MÓDULOS DE ADMINISTRACIÓN DE USUARIOS Y GESTIÓN DE CELDAS
+  // =========================================================================
+
+  // 8. Registrar Nuevo Cliente con Vehículo (HU-05 y HU-06)
+  registrarCliente: (req, res) => {
+    try {
+      let { documento, nombres, apellidos, telefono, email, placa, id_tipo_vehiculo, marca, modelo, color } = req.body;
+      
+      documento = (documento || '').trim();
+      nombres = (nombres || '').trim();
+      apellidos = (apellidos || '').trim();
+      placa = (placa || '').toUpperCase().trim();
+
+      if (!documento || !nombres || !apellidos || !telefono) {
+        return res.status(400).json({ success: false, message: 'Documento, nombres, apellidos y teléfono son obligatorios.' });
+      }
+
+      // Validar si el cliente ya existe
+      const clienteExistente = db.prepare('SELECT id FROM clientes WHERE documento = ?').get(documento);
+      if (clienteExistente) {
+        return res.status(400).json({ success: false, message: `El cliente con documento ${documento} ya se encuentra registrado.` });
+      }
+
+      // Insertar Cliente
+      const insertCliente = db.prepare(`
+        INSERT INTO clientes (documento, nombres, apellidos, telefono, email, estado)
+        VALUES (?, ?, ?, ?, ?, 'ACTIVO')
+      `);
+      const infoCliente = insertCliente.run(documento, nombres, apellidos, telefono, email || '');
+      const idCliente = infoCliente.lastInsertRowid;
+
+      // Si se proporcionó una placa para asociar vehículo
+      if (placa) {
+        const vehiculoExistente = db.prepare('SELECT placa FROM vehiculos WHERE placa = ?').get(placa);
+        if (vehiculoExistente) {
+          db.prepare('UPDATE vehiculos SET id_cliente = ? WHERE placa = ?').run(idCliente, placa);
+        } else {
+          db.prepare(`
+            INSERT INTO vehiculos (placa, id_tipo_vehiculo, marca, modelo, color, id_cliente)
+            VALUES (?, ?, ?, ?, ?, ?)
+          `).run(placa, id_tipo_vehiculo || 1, marca || 'Genérico', modelo || 'N/A', color || 'N/A', idCliente);
+        }
+
+        // Crear mensualidad de cortesía de 30 días para pruebas
+        db.prepare(`
+          INSERT INTO mensualidades (id_cliente, placa, fecha_inicio, fecha_fin, valor_pagado, estado)
+          VALUES (?, ?, date('now'), date('now', '+30 days'), 180000, 'VIGENTE')
+        `).run(idCliente, placa);
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: `Cliente ${nombres} ${apellidos} registrado exitosamente${placa ? ` con vehículo ${placa}` : ''}.`
+      });
+    } catch (error) {
+      console.error('Error al registrar cliente:', error);
+      return res.status(500).json({ success: false, message: 'Error interno al registrar cliente', error: error.message });
+    }
+  },
+
+  // 9. Crear Nueva Celda (HU-07)
+  crearCelda: (req, res) => {
+    try {
+      let { codigo, id_tipo_vehiculo, piso } = req.body;
+      codigo = (codigo || '').toUpperCase().trim();
+      piso = parseInt(piso) || 1;
+      id_tipo_vehiculo = parseInt(id_tipo_vehiculo) || 1;
+
+      if (!codigo) {
+        return res.status(400).json({ success: false, message: 'El código de la celda es obligatorio.' });
+      }
+
+      const celdaExistente = db.prepare('SELECT codigo FROM celdas WHERE codigo = ?').get(codigo);
+      if (celdaExistente) {
+        return res.status(400).json({ success: false, message: `La celda ${codigo} ya existe en el parqueadero.` });
+      }
+
+      db.prepare(`
+        INSERT INTO celdas (codigo, id_tipo_vehiculo, piso, estado, placa_actual)
+        VALUES (?, ?, ?, 'DISPONIBLE', NULL)
+      `).run(codigo, id_tipo_vehiculo, piso);
+
+      return res.status(201).json({
+        success: true,
+        message: `Celda ${codigo} (Piso ${piso}) creada exitosamente en estado DISPONIBLE.`
+      });
+    } catch (error) {
+      console.error('Error al crear celda:', error);
+      return res.status(500).json({ success: false, message: 'Error interno al crear celda', error: error.message });
+    }
+  },
+
+  // 10. Cambiar Estado de Celda / Inhabilitar por Mantenimiento (HU-08)
+  cambiarEstadoCelda: (req, res) => {
+    try {
+      const codigo = (req.params.codigo || '').toUpperCase().trim();
+      const { nuevo_estado } = req.body;
+
+      if (!['DISPONIBLE', 'MANTENIMIENTO'].includes(nuevo_estado)) {
+        return res.status(400).json({ success: false, message: 'Estado inválido. Solo se permite DISPONIBLE o MANTENIMIENTO.' });
+      }
+
+      const celda = db.prepare('SELECT * FROM celdas WHERE codigo = ?').get(codigo);
+      if (!celda) {
+        return res.status(404).json({ success: false, message: `La celda ${codigo} no existe.` });
+      }
+
+      if (celda.estado === 'OCUPADA' && nuevo_estado === 'MANTENIMIENTO') {
+        return res.status(400).json({
+          success: false,
+          message: `No se puede poner en mantenimiento la celda ${codigo} porque tiene el vehículo ${celda.placa_actual} adentro.`
+        });
+      }
+
+      db.prepare('UPDATE celdas SET estado = ? WHERE codigo = ?').run(nuevo_estado, codigo);
+
+      return res.json({
+        success: true,
+        message: `La celda ${codigo} cambió de estado a ${nuevo_estado} exitosamente.`
+      });
+    } catch (error) {
+      console.error('Error al cambiar estado de celda:', error);
+      return res.status(500).json({ success: false, message: 'Error interno al actualizar celda', error: error.message });
+    }
   }
 };
 

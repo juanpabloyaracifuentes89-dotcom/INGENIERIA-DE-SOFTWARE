@@ -60,6 +60,51 @@ const app = {
       this.openModal('modalNovedad');
     });
 
+    // ITERACIÓN 2: Modales de Nuevo Cliente y Configuración de Celda
+    document.getElementById('btnOpenModalNuevoCliente').addEventListener('click', () => {
+      document.getElementById('formNuevoCliente').reset();
+      this.openModal('modalNuevoCliente');
+    });
+
+    document.getElementById('btnOpenModalNuevaCelda').addEventListener('click', () => {
+      document.getElementById('formNuevaCelda').reset();
+      this.populateSelectCeldasMantenimiento();
+      this.openModal('modalNuevaCelda');
+    });
+
+    // Pestañitas internas del modal de celdas
+    document.getElementById('tabBtnCrearCelda').addEventListener('click', () => {
+      document.getElementById('formNuevaCelda').classList.remove('hidden');
+      document.getElementById('formEstadoCelda').classList.add('hidden');
+      document.getElementById('tabBtnCrearCelda').className = 'btn btn-sm btn-primary';
+      document.getElementById('tabBtnMantenimiento').className = 'btn btn-sm btn-secondary';
+    });
+
+    document.getElementById('tabBtnMantenimiento').addEventListener('click', () => {
+      document.getElementById('formNuevaCelda').classList.add('hidden');
+      document.getElementById('formEstadoCelda').classList.remove('hidden');
+      document.getElementById('tabBtnCrearCelda').className = 'btn btn-sm btn-secondary';
+      document.getElementById('tabBtnMantenimiento').className = 'btn btn-sm btn-primary';
+    });
+
+    // Envío de Formulario Nuevo Cliente (Iteración 2)
+    document.getElementById('formNuevoCliente').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await this.handleFormNuevoCliente();
+    });
+
+    // Envío de Formulario Crear Celda (Iteración 2)
+    document.getElementById('formNuevaCelda').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await this.handleFormCrearCelda();
+    });
+
+    // Envío de Formulario Estado Celda / Mantenimiento (Iteración 2)
+    document.getElementById('formEstadoCelda').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await this.handleFormCambiarEstadoCelda();
+    });
+
     // Toggle para novedades en entrada
     const checkNovedad = document.getElementById('checkTieneNovedad');
     if (checkNovedad) {
@@ -758,6 +803,139 @@ const app = {
         tr.style.display = 'none';
       }
     });
+  },
+
+  // Helpers para Iteración 2: Gestión de Usuarios y Celdas
+  populateSelectCeldasMantenimiento() {
+    const select = document.getElementById('selectCeldaMantenimiento');
+    select.innerHTML = '';
+
+    // Solo mostrar celdas que NO estén OCUPADAS (no se puede poner en mantenimiento si hay un carro adentro)
+    const celdasValidas = this.celdas.filter(c => c.estado !== 'OCUPADA');
+
+    if (celdasValidas.length === 0) {
+      const opt = document.createElement('option');
+      opt.value = '';
+      opt.textContent = 'No hay celdas disponibles para cambiar de estado';
+      select.appendChild(opt);
+      return;
+    }
+
+    celdasValidas.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.codigo;
+      opt.textContent = `Celda ${c.codigo} (${c.tipo_vehiculo_nombre}) - Estado actual: ${c.estado}`;
+      select.appendChild(opt);
+    });
+  },
+
+  async handleFormNuevoCliente() {
+    const documento = document.getElementById('inputCliDoc').value.trim();
+    const nombres = document.getElementById('inputCliNom').value.trim();
+    const apellidos = document.getElementById('inputCliApe').value.trim();
+    const telefono = document.getElementById('inputCliTel').value.trim();
+
+    // Validación en frontend antes de enviar al servidor
+    if (!documento || !nombres || !apellidos || !telefono) {
+      this.showToast('Documento, nombres, apellidos y teléfono son obligatorios.', 'warning');
+      return;
+    }
+
+    const payload = {
+      documento,
+      nombres,
+      apellidos,
+      telefono,
+      email: document.getElementById('inputCliEmail').value.trim(),
+      placa: document.getElementById('inputCliPlaca').value.trim().toUpperCase(),
+      id_tipo_vehiculo: parseInt(document.getElementById('selectCliTipoVeh').value) || 1,
+      marca: document.getElementById('inputCliMarca').value.trim(),
+      modelo: document.getElementById('inputCliModelo').value.trim()
+    };
+
+    try {
+      const res = await fetch('/api/clientes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(r => r.json());
+
+      if (!res.success) {
+        this.showToast(res.message, 'error');
+        return;
+      }
+
+      this.closeModal('modalNuevoCliente');
+      this.showToast(res.message, 'success');
+      this.loadAllData();
+    } catch (err) {
+      this.showToast('Error de conexión al guardar cliente', 'error');
+    }
+  },
+
+  async handleFormCrearCelda() {
+    const codigo = document.getElementById('inputCodCelda').value.trim().toUpperCase();
+
+    // Validación en frontend antes de enviar al servidor
+    if (!codigo) {
+      this.showToast('El código de la celda es obligatorio.', 'warning');
+      return;
+    }
+
+    const payload = {
+      codigo,
+      piso: parseInt(document.getElementById('selectPisoCelda').value) || 1,
+      id_tipo_vehiculo: parseInt(document.getElementById('selectTipoCelda').value) || 1
+    };
+
+    try {
+      const res = await fetch('/api/celdas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).then(r => r.json());
+
+      if (!res.success) {
+        this.showToast(res.message, 'error');
+        return;
+      }
+
+      this.closeModal('modalNuevaCelda');
+      this.showToast(res.message, 'success');
+      this.loadAllData();
+    } catch (err) {
+      this.showToast('Error de red al crear celda', 'error');
+    }
+  },
+
+  async handleFormCambiarEstadoCelda() {
+    const codigo = document.getElementById('selectCeldaMantenimiento').value;
+    const nuevo_estado = document.getElementById('selectAccionCelda').value;
+
+    // Validación en frontend antes de enviar al servidor
+    if (!codigo) {
+      this.showToast('Debe seleccionar una celda válida.', 'warning');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/celdas/${codigo}/estado`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nuevo_estado })
+      }).then(r => r.json());
+
+      if (!res.success) {
+        this.showToast(res.message, 'error');
+        return;
+      }
+
+      this.closeModal('modalNuevaCelda');
+      this.showToast(res.message, 'success');
+      this.loadAllData();
+    } catch (err) {
+      this.showToast('Error al actualizar estado de celda', 'error');
+    }
   },
 
   // Helpers de modales

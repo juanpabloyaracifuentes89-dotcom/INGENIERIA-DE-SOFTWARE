@@ -75,13 +75,19 @@
     <section class="quick-actions-bar">
       <div class="action-buttons">
         <button class="btn btn-primary" id="btnOpenModalEntrada">
-          <i class="fa-solid fa-arrow-right-to-bracket"></i> Registrar Entrada de Vehículo
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Registrar Entrada
         </button>
         <button class="btn btn-danger" id="btnOpenModalSalida">
-          <i class="fa-solid fa-arrow-right-from-bracket"></i> Registrar Salida de Vehículo
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Registrar Salida
         </button>
         <button class="btn btn-warning" id="btnOpenModalNovedad">
           <i class="fa-solid fa-file-pen"></i> Reportar Novedad
+        </button>
+        <button class="btn btn-secondary" id="btnOpenModalNuevoCliente" style="background:#2563eb; color:#fff;">
+          <i class="fa-solid fa-user-plus"></i> + Nuevo Cliente
+        </button>
+        <button class="btn btn-secondary" id="btnOpenModalNuevaCelda" style="background:#0d9488; color:#fff;">
+          <i class="fa-solid fa-square-plus"></i> + Configurar Celda
         </button>
       </div>
       <div class="search-filter">
@@ -405,6 +411,149 @@
         <button class="btn btn-primary btn-block" onclick="window.print()">
           <i class="fa-solid fa-print"></i> Imprimir Comprobante
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR NUEVO CLIENTE (ITERACIÓN 2 - HU-05 y HU-06) -->
+  <div class="modal-overlay" id="modalNuevoCliente">
+    <div class="modal-dialog">
+      <div class="modal-header" style="background:#2563eb;">
+        <h3><i class="fa-solid fa-user-plus"></i> Registrar Nuevo Cliente (Iteración 2)</h3>
+        <button class="close-modal" onclick="app.closeModal('modalNuevoCliente')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formNuevoCliente">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="inputCliDoc">Documento / Cédula <span class="req">*</span></label>
+              <input type="text" id="inputCliDoc" placeholder="Ej: 1040506070" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="inputCliTel">Teléfono Celular <span class="req">*</span></label>
+              <input type="text" id="inputCliTel" placeholder="Ej: 3112223344" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="inputCliNom">Nombres <span class="req">*</span></label>
+              <input type="text" id="inputCliNom" placeholder="Ej: Andrés Felipe" required>
+            </div>
+            <div class="form-group flex-1">
+              <label for="inputCliApe">Apellidos <span class="req">*</span></label>
+              <input type="text" id="inputCliApe" placeholder="Ej: Morales Castro" required>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="inputCliEmail">Correo Electrónico</label>
+            <input type="email" id="inputCliEmail" placeholder="Ej: andres.morales@correo.com">
+          </div>
+
+          <div style="border-top:1px dashed #cbd5e1; margin:15px 0; padding-top:12px;">
+            <h4 style="font-size:0.95rem; color:#1e3a8a; margin-bottom:10px;">
+              <i class="fa-solid fa-car"></i> Vincular Automotor al Cliente (Opcional)
+            </h4>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="inputCliPlaca">Placa</label>
+                <input type="text" id="inputCliPlaca" placeholder="Ej: NEW999" maxlength="8">
+              </div>
+              <div class="form-group flex-1">
+                <label for="selectCliTipoVeh">Tipo de Vehículo</label>
+                <select id="selectCliTipoVeh">
+                  <option value="1">Automóvil</option>
+                  <option value="2">Motocicleta</option>
+                  <option value="3">Camioneta / SUV</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group flex-1">
+                <label for="inputCliMarca">Marca</label>
+                <input type="text" id="inputCliMarca" placeholder="Ej: Chevrolet">
+              </div>
+              <div class="form-group flex-1">
+                <label for="inputCliModelo">Modelo</label>
+                <input type="text" id="inputCliModelo" placeholder="Ej: Onix 2024">
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalNuevoCliente')">Cancelar</button>
+            <button type="submit" class="btn btn-primary" style="background:#2563eb;"><i class="fa-solid fa-check"></i> Guardar Cliente</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: GESTIONAR CELDA / MANTENIMIENTO (ITERACIÓN 2 - HU-07 y HU-08) -->
+  <div class="modal-overlay" id="modalNuevaCelda">
+    <div class="modal-dialog">
+      <div class="modal-header" style="background:#0d9488;">
+        <h3><i class="fa-solid fa-gears"></i> Gestión y Configuración de Celdas (Iteración 2)</h3>
+        <button class="close-modal" onclick="app.closeModal('modalNuevaCelda')">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <!-- Pestañitas internas del modal -->
+        <div style="display:flex; gap:10px; margin-bottom:15px; border-bottom:1px solid #e2e8f0; padding-bottom:8px;">
+          <button type="button" id="tabBtnCrearCelda" class="btn btn-sm btn-primary">Crear Nueva Celda</button>
+          <button type="button" id="tabBtnMantenimiento" class="btn btn-sm btn-secondary">Inhabilitar por Mantenimiento</button>
+        </div>
+
+        <!-- Opción 1: Crear Celda -->
+        <form id="formNuevaCelda">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="inputCodCelda">Código de Celda <span class="req">*</span></label>
+              <input type="text" id="inputCodCelda" placeholder="Ej: A-09 o M-05" required maxlength="6">
+            </div>
+            <div class="form-group flex-1">
+              <label for="selectPisoCelda">Piso</label>
+              <select id="selectPisoCelda">
+                <option value="1">Piso 1</option>
+                <option value="2">Piso 2</option>
+                <option value="3">Piso 3</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="selectTipoCelda">Tipo de Automotor Permitido</label>
+            <select id="selectTipoCelda">
+              <option value="1">Automóvil ($4.500/h)</option>
+              <option value="2">Motocicleta ($2.500/h)</option>
+              <option value="3">Camioneta / SUV ($6.000/h)</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalNuevaCelda')">Cancelar</button>
+            <button type="submit" class="btn btn-primary" style="background:#0d9488;"><i class="fa-solid fa-plus"></i> Crear Celda</button>
+          </div>
+        </form>
+
+        <!-- Opción 2: Cambiar estado a mantenimiento -->
+        <form id="formEstadoCelda" class="hidden">
+          <div class="form-group">
+            <label for="selectCeldaMantenimiento">Seleccionar Celda de Patio <span class="req">*</span></label>
+            <select id="selectCeldaMantenimiento" required>
+              <!-- Dinámico -->
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="selectAccionCelda">Nuevo Estado Operativo</label>
+            <select id="selectAccionCelda">
+              <option value="MANTENIMIENTO">⚠️ Inhabilitar (Poner en Mantenimiento)</option>
+              <option value="DISPONIBLE">🟢 Habilitar (Poner en Disponible)</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalNuevaCelda')">Cancelar</button>
+            <button type="submit" class="btn btn-warning"><i class="fa-solid fa-wrench"></i> Aplicar Cambio de Estado</button>
+          </div>
+        </form>
+
       </div>
     </div>
   </div>

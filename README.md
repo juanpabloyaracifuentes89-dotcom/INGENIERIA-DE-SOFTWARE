@@ -1,25 +1,31 @@
 # Sistema de Información Parqueadero "Autos Colombia"
 ## Asignatura: Ingeniería de Software
-### Evidencia de Aprendizaje 1 (EA1) - Iteración 1: Gestión de la Entrada y Salida de Vehículos
+### Evidencia de Aprendizaje 2 (EA2) - Iteración 2: Gestión de Usuarios y Gestión de Celdas
 
 - **Estudiante:** Juan Pablo Yara Cifuentes
 - **Grupo:** PREICA2602B020081
 - **Institución:** Institución Universitaria Digital de Antioquia - IU Digital
 - **Materia:** Ingeniería de Software
 
-Este repositorio contiene la solución de software desarrollada para el parqueadero **Autos Colombia**, enfocada en la gestión operativa de entradas, salidas, control de mensualidades, monitoreo de celdas en tiempo real y registro de novedades vehiculares.
+Este repositorio contiene la evolución del software desarrollado para el parqueadero **Autos Colombia**, integrando los módulos de la **Iteración 1** (control de entradas, salidas, celdas y novedades) y de la **Iteración 2** (gestión de usuarios/clientes y administración de celdas).
 
 ---
 
-## Características Principales (Iteración 1)
+## Características Principales (Iteraciones 1 y 2)
 
-- **Control de Patio en Tiempo Real:** Visualización gráfica e interactiva de celdas organizadas por tipo de vehículo (Automóviles, Motocicletas, Camionetas) y estado (Disponible, Ocupada, Mantenimiento).
-- **Validación Automática de Mensualidades:** Verificación instantánea de contratos vigentes por placa, exonerando cobros en la salida ($0 COP) para clientes mensuales y derivando a cobro por fracción/hora para visitantes ocasionales.
-- **Asignación y Liberación Dinámica de Celdas:** Actualización atómica en la base de datos de la celda ocupada y liberación inmediata al registrar la salida.
-- **Control Anti-Passback:** Bloqueo de ingresos duplicados para vehículos que ya figuren dentro de las instalaciones.
-- **Registro de Novedades e Incidentes:** Módulo de inspección para documentar rayones, golpes o accesorios faltantes preexistentes al ingreso para respaldo legal.
-- **Liquidación Automática y Emisión de Tickets:** Cálculo del tiempo transcurrido en minutos/horas y liquidación tarifaria con generación de tickets imprimibles.
-- **Arquitectura en Tres Capas:** Separación limpia de presentación (HTML5/CSS3/JS), lógica de negocio (Express.js REST API) y persistencia relacional con transacciones (SQLite / SQL).
+### Iteración 1: Gestión de Entrada y Salida de Vehículos
+- Control de patio en tiempo real con visualización gráfica de celdas.
+- Validación automática de mensualidades y control anti-passback.
+- Asignación asistida y liberación de celdas de parqueo.
+- Registro de novedades e incidentes preexistentes al ingreso.
+- Liquidación automática y generación de tickets imprimibles.
+
+### Iteración 2: Gestión de Usuarios y Gestión de Celdas
+- **CRUD de Clientes y Usuarios:** Módulo administrativo para registrar clientes capturando documento, nombres, teléfono y correo electrónico con validación de unicidad.
+- **Vinculación Vehicular:** Asociación de uno o más automotores (placas) a un cliente titular con emisión de mensualidades.
+- **Configuración de Celdas:** Parametrización de nuevas celdas indicando código identificador único, piso de ubicación y categoría vehicular permitida.
+- **Gestión de Estados de Celda (Mantenimiento):** Bloqueo preventivo de celdas inhabilitadas por averías locativas, excluyéndolas automáticamente del flujo de ingreso de vehículos.
+- **Control de Aforo Dinámico:** Cálculo reactivo de capacidad total, cupos ocupados y porcentaje de ocupación en patio.
 
 ---
 

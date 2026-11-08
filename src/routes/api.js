@@ -3,10 +3,13 @@ const express = require('express');
 const router = express.Router();
 const parkingController = require('../controllers/parkingController');
 
-// Rutas de Celdas
+// Rutas de Celdas (Iteración 1 y 2)
 router.get('/celdas', parkingController.getCeldas);
+router.post('/celdas', parkingController.crearCelda);
+router.put('/celdas/:codigo/estado', parkingController.cambiarEstadoCelda);
 
-// Rutas de Vehículos y Mensualidades
+// Rutas de Clientes y Mensualidades (Iteración 1 y 2)
+router.post('/clientes', parkingController.registrarCliente);
 router.get('/vehiculos/validar/:placa', parkingController.validarVehiculo);
 router.get('/mensualidades', parkingController.getMensualidades);
 
