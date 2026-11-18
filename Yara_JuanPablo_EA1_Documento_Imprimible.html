@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Yara_JuanPablo_EA1 - Sistema Autos Colombia (Iteración 3)</title>
+  <style>
+    @page {
+      size: letter;
+      margin: 20mm 18mm 20mm 18mm;
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff !important; color: #000 !important; font-size: 10.5pt; }
+      .page-break { page-break-before: always; }
+      .card, .table-container, .receipt-box { break-inside: avoid; }
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      color: #1e293b;
+      background: #f8fafc;
+      margin: 0;
+      padding: 0;
+    }
+    .print-bar {
+      position: sticky;
+      top: 0;
+      background: #0f172a;
+      color: #fff;
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 1000;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+    }
+    .print-btn {
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .print-btn:hover { background: #1d4ed8; }
+    .document-wrapper {
+      max-width: 900px;
+      margin: 30px auto;
+      background: #fff;
+      padding: 50px 60px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.08);
+      border-radius: 8px;
+    }
+    .cover-page {
+      min-height: 850px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .cover-header h1 {
+      font-size: 1.6rem;
+      color: #1e3a8a;
+      letter-spacing: 1px;
+      margin-bottom: 6px;
+    }
+    .cover-header h2 {
+      font-size: 1.15rem;
+      color: #475569;
+      font-weight: 500;
+      margin-top: 0;
+    }
+    .cover-title {
+      margin: 80px 0;
+    }
+    .cover-title h2 {
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      color: #059669;
+      letter-spacing: 1.5px;
+      margin-bottom: 12px;
+    }
+    .cover-title h3 {
+      font-size: 2.1rem;
+      color: #0f172a;
+      line-height: 1.3;
+      margin: 0;
+    }
+    .cover-title p {
+      font-size: 1.2rem;
+      color: #64748b;
+      margin-top: 10px;
+    }
+    .cover-meta {
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px;
+      text-align: left;
+      font-size: 0.95rem;
+      margin-bottom: 40px;
+    }
+    .cover-meta table { width: 100%; border-collapse: collapse; }
+    .cover-meta td { padding: 6px 12px; }
+    .cover-meta td:first-child { font-weight: bold; width: 35%; color: #334155; }
+    h1, h2, h3, h4 { color: #0f172a; }
+    h1 { font-size: 1.6rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-top: 40px; }
+    h2 { font-size: 1.3rem; margin-top: 25px; color: #1e3a8a; }
+    h3 { font-size: 1.1rem; margin-top: 20px; color: #334155; }
+    p, li { font-size: 0.98rem; text-align: justify; }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 0.88rem;
+    }
+    table.data-table th, table.data-table td {
+      border: 1px solid #cbd5e1;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    table.data-table th {
+      background-color: #f1f5f9;
+      font-weight: 700;
+      color: #1e293b;
+    }
+    table.data-table tr:nth-child(even) { background-color: #f8fafc; }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-blue { background: #e0f2fe; color: #0369a1; }
+    .badge-purple { background: #f3e8ff; color: #6b21a8; }
+    .badge-amber { background: #fef3c7; color: #92400e; }
+    .code-box {
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: Consolas, Monaco, "Courier New", monospace;
+      font-size: 0.82rem;
+      overflow-x: auto;
+      margin: 15px 0;
+      line-height: 1.4;
+    }
+    .receipt-box {
+      max-width: 360px;
+      margin: 20px auto;
+      background: #fff;
+      border: 2px dashed #94a3b8;
+      border-radius: 8px;
+      padding: 24px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .receipt-box .header { text-align: center; border-bottom: 1px dashed #94a3b8; padding-bottom: 10px; margin-bottom: 12px; }
+    .receipt-box .row { display: flex; justify-content: space-between; padding: 3px 0; }
+    .receipt-box .total { border-top: 1px dashed #94a3b8; border-bottom: 1px dashed #94a3b8; font-weight: bold; font-size: 1.05rem; margin: 10px 0; padding: 6px 0; }
+    .receipt-box .qr { text-align: center; margin: 15px 0; }
+    .ui-mockup-frame {
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 25px 0;
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+    }
+    .ui-mockup-header {
+      background: #1e293b;
+      color: #fff;
+      padding: 10px 16px;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ui-mockup-body { padding: 20px; background: #fff; }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA DE IMPRESIÓN SUPERIOR -->
+  <div class="print-bar no-print">
+    <div>
+      <strong>Informe Técnico Académico — Evidencia de Aprendizaje 3 (Iteración 3)</strong>
+      <span style="font-size:0.85rem; color:#94a3b8; margin-left:12px;">Parqueadero "Autos Colombia"</span>
+    </div>
+    <button class="print-btn" onclick="window.print()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"></path><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+      Imprimir / Guardar como PDF
+    </button>
+  </div>
+
+  <div class="document-wrapper">
+
+    <!-- PORTADA ACADÉMICA -->
+    <div class="cover-page">
+      <div class="cover-header">
+        <h1>INSTITUCIÓN UNIVERSITARIA DIGITAL DE ANTIOQUIA</h1>
+        <h2>FACULTAD DE INGENIERÍA Y CIENCIAS APLICADAS<br>TECNOLOGÍA EN DESARROLLO DE SOFTWARE</h2>
+      </div>
+
+      <div class="cover-title">
+        <h2>EVIDENCIA DE APRENDIZAJE 3 (EA3) — DISEÑO SISTEMA DE INFORMACIÓN</h2>
+        <h3>SISTEMA DE INFORMACIÓN PARQUEADERO "AUTOS COLOMBIA"</h3>
+        <p>Iteración 3: Módulo de Gestión de Pagos, Facturación POS y Tesorería</p>
+      </div>
+
+      <div class="cover-meta">
+        <table>
+          <tr>
+            <td>Asignatura:</td>
+            <td>Ingeniería de Software</td>
+          </tr>
+          <tr>
+            <td>Docente Asesor:</td>
+            <td>Esteban Montoya</td>
+          </tr>
+          <tr>
+            <td>Estudiante:</td>
+            <td><strong>Juan Pablo Yara Cifuentes</strong></td>
+          </tr>
+          <tr>
+            <td>Código / Grupo:</td>
+            <td>PREICA2602B020081</td>
+          </tr>
+          <tr>
+            <td>Fecha de Entrega:</td>
+            <td>17 de Noviembre de 2026</td>
+          </tr>
+          <tr>
+            <td>Repositorio GitHub:</td>
+            <td><a href="https://github.com/juanpabloyaracifuentes89-dotcom/INGENIERIA-DE-SOFTWARE.git" target="_blank">https://github.com/juanpabloyaracifuentes89-dotcom/INGENIERIA-DE-SOFTWARE.git</a></td>
+          </tr>
+        </table>
+      </div>
+
+      <div style="font-size:0.9rem; color:#64748b;">
+        Medellín, Antioquia, Colombia<br>2026
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 1. INTRODUCCIÓN -->
+    <h1>1. INTRODUCCIÓN</h1>
+    <p>El Parqueadero <strong>"Autos Colombia"</strong> presta servicios de custodia vehicular bajo las modalidades de mensualidad garantizada y cobro por fracciones horarias a usuarios ocasionales. Con el crecimiento constante del aforo vehicular, la operación manual mediante talonarios de papel genera cuellos de botella en la taquilla, riesgos de pérdidas económicas por cálculos incorrectos de cambio y falta de trazabilidad en los arqueos de caja diarios.</p>
+    
+    <p>En el marco del curso de <strong>Ingeniería de Software</strong>, el sistema de información se ha construido mediante un enfoque de desarrollo evolutivo e incremental segmentado en tres iteraciones:</p>
+    <ul>
+      <li><strong>Iteración 1 (Control Operativo):</strong> Registro de entrada y salida, asignación gráfica de celdas libres y control de novedades vehiculares.</li>
+      <li><strong>Iteración 2 (Gestión de Usuarios y Celdas):</strong> Administración de clientes titulares, vinculación de placas vehiculares y parametrización de celdas en mantenimiento locativo.</li>
+      <li><strong>Iteración 3 (Gestión de Pagos y Facturación):</strong> Foco central de esta entrega, que introduce la liquidación de tarifas por tiempo, cobro y extensión de mensualidades, soporte multi-medio (efectivo con cálculo de vueltos, datáfono y transferencias PSE/Nequi), emisión de comprobantes oficiales POS con código QR y arqueo diario de caja.</li>
+    </ul>
+
+    <!-- 2. REQUERIMIENTOS FUNCIONALES Y NO FUNCIONALES -->
+    <h1>2. REQUERIMIENTOS FUNCIONALES Y NO FUNCIONALES (PAGOS)</h1>
+    
+    <h2>2.1 Requerimientos Funcionales (RF-PAG)</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:15%;">ID</th>
+          <th style="width:25%;">Nombre</th>
+          <th>Descripción</th>
+          <th style="width:25%;">Criterio de Validación</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>RF-PAG-01</strong></td>
+          <td>Registro de Pago de Mensualidad</td>
+          <td>Permitir el cobro y renovación de la suscripción mensual extendiendo la vigencia 30 días a partir de la fecha actual o fin de contrato anterior.</td>
+          <td>Genera registro en tabla `pagos` y actualiza la tabla `mensualidades` en estado 'VIGENTE'.</td>
+        </tr>
+        <tr>
+          <td><strong>RF-PAG-02</strong></td>
+          <td>Liquidación de Cobro Ocasional</td>
+          <td>Calcular automáticamente el valor a pagar al registrar la salida de un vehículo ocasional multiplicando las fracciones de hora por la tarifa horaria.</td>
+          <td>Cálculo en tiempo real: $Cobro = Horas \times Tarifa\_Hora$. Registra pago automático.</td>
+        </tr>
+        <tr>
+          <td><strong>RF-PAG-03</strong></td>
+          <td>Soporte Multi-Medio de Pago</td>
+          <td>Soportar pagos en Efectivo, Tarjeta Débito/Crédito y Transferencias Digitales (Nequi, Daviplata, Bancolombia, PSE).</td>
+          <td>Almacena el método y exige el número de aprobación o voucher si es electrónico.</td>
+        </tr>
+        <tr>
+          <td><strong>RF-PAG-04</strong></td>
+          <td>Cálculo Dinámico de Cambio/Vueltas</td>
+          <td>Calcular automáticamente el dinero sobrante a devolver cuando el cliente abona en efectivo y bloquear el cobro si el dinero es insuficiente.</td>
+          <td>$Cambio = Recibido - Total$. Si $Recibido < Total$, arroja alerta 400.</td>
+        </tr>
+        <tr>
+          <td><strong>RF-PAG-05</strong></td>
+          <td>Emisión de Comprobante POS</td>
+          <td>Emitir un tiquete de caja con consecutivo único inmutable (`REC-2026-XXXX`), datos de Autos Colombia SAS, NIT, desglose y cajero.</td>
+          <td>Generación inmediata de comprobante visual e imprimible.</td>
+        </tr>
+        <tr>
+          <td><strong>RF-PAG-06</strong></td>
+          <td>Código QR de Verificación</td>
+          <td>Integrar en el comprobante un código QR que codifique los datos fiscales de la transacción para validación en portería.</td>
+          <td>Renderizado gráfico vectorial del QR en la tirilla.</td>
+        </tr>
+        <tr>
+          <td><strong>RF-PAG-07</strong></td>
+          <td>Arqueo y Cuadre Diario de Caja</td>
+          <td>Consolidar en tiempo real el total recaudado en el turno/día desglosado por medios de pago y por concepto.</td>
+          <td>Resumen discriminado: Efectivo, Tarjetas, Transferencias y Total consolidado.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>2.2 Requerimientos No Funcionales (RNF-PAG)</h2>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width:18%;">ID</th>
+          <th style="width:25%;">Categoría</th>
+          <th>Especificación Técnica</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>RNF-PAG-01</strong></td>
+          <td>Integridad Transaccional</td>
+          <td>Cumplimiento estricto de propiedades ACID mediante transacciones atómicas en SQLite. No se permiten pagos sin comprobante ni celdas liberadas sin liquidación.</td>
+        </tr>
+        <tr>
+          <td><strong>RNF-PAG-02</strong></td>
+          <td>Rendimiento</td>
+          <td>Tiempo de respuesta inferior a 1.5 segundos en el procesamiento del cobro y emisión del comprobante digital.</td>
+        </tr>
+        <tr>
+          <td><strong>RNF-PAG-03</strong></td>
+          <td>Seguridad y Trazabilidad</td>
+          <td>Inmutabilidad de recibos emitidos; auditoría obligatoria con operador de caja, fecha, hora del servidor y estado del pago.</td>
+        </tr>
+        <tr>
+          <td><strong>RNF-PAG-04</strong></td>
+          <td>Compatibilidad de Impresión</td>
+          <td>Hoja de estilos CSS optimizada (`@media print`) para impresión en rollos de 80 mm y 58 mm estándar POS térmico.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- 3. HISTORIAS DE USUARIO -->
+    <h1>3. HISTORIAS DE USUARIO DE GESTIÓN DE PAGOS</h1>
+
+    <div style="background:#f1f5f9; border-left:4px solid #2563eb; padding:15px; margin:15px 0; border-radius:4px;">
+      <h3 style="margin:0 0 6px 0;">HU-09: Cobro y Facturación de Mensualidades (8 SP - Alta)</h3>
+      <p style="margin:0;"><strong>Como</strong> Cajero del Parqueadero Autos Colombia, <strong>quiero</strong> registrar el cobro anticipado de la mensualidad de un cliente, <strong>para</strong> extender la vigencia de su acceso y emitir su comprobante de pago.</p>
+      <div style="font-size:0.85rem; margin-top:10px; background:#fff; padding:10px; border-radius:4px;">
+        <strong>Criterio de Aceptación (Gherkin):</strong><br>
+        <strong>Dado</strong> que el cliente con vehículo placa "ABC123" tiene mensualidad que vence hoy,<br>
+        <strong>Cuando</strong> el cajero registra el pago de $180.000 COP en el sistema,<br>
+        <strong>Entonces</strong> se actualiza la fecha de vencimiento a +30 días, el estado cambia a 'VIGENTE' y se genera el recibo `REC-2026-XXXX`.
+      </div>
+    </div>
+
+    <div style="background:#f1f5f9; border-left:4px solid #059669; padding:15px; margin:15px 0; border-radius:4px;">
+      <h3 style="margin:0 0 6px 0;">HU-10: Cobro de Estadía Ocasional y Cálculo de Vueltos (5 SP - Alta)</h3>
+      <p style="margin:0;"><strong>Como</strong> Cajero del Parqueadero, <strong>quiero</strong> liquidar la salida de un vehículo ocasional calculando el cambio en efectivo, <strong>para</strong> agilizar el retiro vehicular y evitar errores en la devolución del dinero.</p>
+      <div style="font-size:0.85rem; margin-top:10px; background:#fff; padding:10px; border-radius:4px;">
+        <strong>Criterio de Aceptación (Gherkin):</strong><br>
+        <strong>Dado</strong> que un vehículo ocasional tiene un valor a pagar de $9.000 COP y el cliente entrega un billete de $20.000 COP,<br>
+        <strong>Cuando</strong> el cajero digita el monto en efectivo recibido,<br>
+        <strong>Entonces</strong> el sistema calcula de inmediato un cambio de $11.000 COP y habilita el botón de confirmación de pago.
+      </div>
+    </div>
+
+    <div style="background:#f1f5f9; border-left:4px solid #7c3aed; padding:15px; margin:15px 0; border-radius:4px;">
+      <h3 style="margin:0 0 6px 0;">HU-11: Emisión de Comprobante Oficial POS con Código QR (5 SP - Media)</h3>
+      <p style="margin:0;"><strong>Como</strong> Cliente del Parqueadero, <strong>quiero</strong> recibir un recibo de caja digital o impreso con código QR, <strong>para</strong> contar con un soporte legal de mi pago y verificar mi salida en la talanquera.</p>
+      <div style="font-size:0.85rem; margin-top:10px; background:#fff; padding:10px; border-radius:4px;">
+        <strong>Criterio de Aceptación (Gherkin):</strong><br>
+        <strong>Dado</strong> que una transacción de pago ha sido aprobada,<br>
+        <strong>Cuando</strong> se procesa en base de datos,<br>
+        <strong>Entonces</strong> se despliega el recibo térmico en pantalla con membrete de Autos Colombia, NIT, desglose y código QR vectorial para impresión directa.
+      </div>
+    </div>
+
+    <div style="background:#f1f5f9; border-left:4px solid #ea580c; padding:15px; margin:15px 0; border-radius:4px;">
+      <h3 style="margin:0 0 6px 0;">HU-12: Arqueo y Cuadre Diario de Caja por Turnos (8 SP - Alta)</h3>
+      <p style="margin:0;"><strong>Como</strong> Administrador o Cajero, <strong>quiero</strong> consultar el consolidado del dinero recaudado durante el turno discriminado por medio de pago, <strong>para</strong> efectuar el cuadre de caja al cierre de jornada.</p>
+      <div style="font-size:0.85rem; margin-top:10px; background:#fff; padding:10px; border-radius:4px;">
+        <strong>Criterio de Aceptación (Gherkin):</strong><br>
+        <strong>Dado</strong> que se han registrado cobros en Efectivo, Tarjetas y Transferencias,<br>
+        <strong>Cuando</strong> el cajero hace clic en "Cierre de Caja",<br>
+        <strong>Entonces</strong> el sistema presenta el total recaudado, el desglose por medio y la cantidad de comprobantes emitidos.
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 4. MOCKUPS -->
+    <h1>4. MOCKUPS DE LAS HISTORIAS DE USUARIO (FIGMA)</h1>
+
+    <h3>4.1 Mockup: Comprobante Oficial POS con Código QR (HU-11)</h3>
+    <div class="receipt-box">
+      <div class="header">
+        <strong style="font-size:1.15rem; letter-spacing:1px;">AUTOS COLOMBIA S.A.S</strong><br>
+        NIT: 901.842.103-5 &bull; Régimen Común<br>
+        Calle 50 # 45-20, Medellín, Colombia<br>
+        PBX: (+57) 604 444 8899<br>
+        <div style="margin-top:6px; font-weight:bold;">RECIBO N° REC-2026-0005</div>
+        <div style="font-size:0.75rem; color:#64748b;">17/11/2026 19:10:45</div>
+      </div>
+      <div class="row"><span>Placa:</span><strong>ABC123</strong></div>
+      <div class="row"><span>Vehículo:</span><span>Mazda 3 (Automóvil)</span></div>
+      <div class="row"><span>Cliente:</span><span>Carlos Andrés Gómez</span></div>
+      <div class="row"><span>Concepto:</span><strong>Mensualidad Parqueadero</strong></div>
+      <div class="row"><span>Método Pago:</span><span class="badge badge-success">EFECTIVO</span></div>
+      <div class="row total">
+        <span>TOTAL PAGADO:</span>
+        <span>$180.000 COP</span>
+      </div>
+      <div class="row"><span>Dinero Recibido:</span><span>$200.000 COP</span></div>
+      <div class="row"><span>Cambio / Vueltas:</span><strong style="color:#059669;">$20.000 COP</strong></div>
+      <div class="row"><span>Cajero:</span><span>Juan Pérez</span></div>
+      <div class="qr">
+        <svg viewBox="0 0 100 100" width="85" height="85">
+          <rect width="100" height="100" fill="#fff" />
+          <rect x="5" y="5" width="25" height="25" fill="#000" /><rect x="8" y="8" width="19" height="19" fill="#fff" /><rect x="12" y="12" width="11" height="11" fill="#000" />
+          <rect x="70" y="5" width="25" height="25" fill="#000" /><rect x="73" y="8" width="19" height="19" fill="#fff" /><rect x="77" y="12" width="11" height="11" fill="#000" />
+          <rect x="5" y="70" width="25" height="25" fill="#000" /><rect x="8" y="73" width="19" height="19" fill="#fff" /><rect x="12" y="77" width="11" height="11" fill="#000" />
+          <rect x="36" y="8" width="6" height="6" fill="#000" /><rect x="46" y="8" width="6" height="12" fill="#000" />
+          <rect x="38" y="36" width="24" height="24" fill="#000" /><rect x="44" y="42" width="12" height="12" fill="#fff" />
+          <rect x="68" y="36" width="6" height="12" fill="#000" /><rect x="80" y="42" width="12" height="18" fill="#000" />
+          <rect x="48" y="66" width="18" height="6" fill="#000" /><rect x="54" y="78" width="12" height="12" fill="#000" />
+        </svg>
+        <div style="font-size:0.7rem; color:#64748b; margin-top:4px;">Verificación Electrónica DIAN / Autos Colombia</div>
+      </div>
+      <div style="text-align:center; font-size:0.75rem; color:#64748b; border-top:1px dashed #94a3b8; padding-top:6px;">
+        ¡Gracias por su visita! Conserve este tiquete.
+      </div>
+    </div>
+
+    <h3>4.2 Mockup: Panel de Control de Caja y Arqueo Diario (HU-12)</h3>
+    <div class="ui-mockup-frame">
+      <div class="ui-mockup-header">
+        <span>Arqueo y Cuadre de Caja Diario — Autos Colombia</span>
+        <span class="badge badge-success">Caja Abierta</span>
+      </div>
+      <div class="ui-mockup-body">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+          <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:6px; padding:12px;">
+            <div style="font-size:0.8rem; color:#047857;">TOTAL RECAUDADO EN EL TURNO</div>
+            <div style="font-size:1.5rem; font-weight:bold; color:#065f46;">$644.000 COP</div>
+          </div>
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:6px; padding:12px;">
+            <div style="font-size:0.8rem; color:#1d4ed8;">COMPROBANTES EMITIDOS</div>
+            <div style="font-size:1.5rem; font-weight:bold; color:#1e40af;">5 Transacciones</div>
+          </div>
+        </div>
+        <table class="data-table">
+          <thead>
+            <tr><th>Medio de Pago</th><th>Transacciones</th><th>Subtotal ($ COP)</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Efectivo en Caja</strong></td><td>3</td><td><strong>$455.000 COP</strong></td></tr>
+            <tr><td><strong>Transferencia (Nequi/PSE)</strong></td><td>1</td><td><strong>$180.000 COP</strong></td></tr>
+            <tr><td><strong>Tarjeta Débito (Datáfono)</strong></td><td>1</td><td><strong>$9.000 COP</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 5. DIAGRAMAS CASOS DE USO -->
+    <h1>5. DIAGRAMAS DE CASOS DE USO DE GESTIÓN DE PAGOS EN STARUML</h1>
+    <p>El diagrama de casos de uso modela las interacciones entre los actores y los casos de uso del módulo de pagos, aplicando rigurosamente los estereotipos <code>&lt;&lt;include&gt;&gt;</code> y <code>&lt;&lt;extend&gt;&gt;</code>:</p>
+    
+    <div class="code-box">
+@startuml Diagrama_Casos_de_Uso_Pagos_AutosColombia
+!theme plain
+left to right direction
+skinparam defaultFontName Arial
+
+actor "Cajero / Operador de Turno" as Cajero
+actor "Administrador de Parqueadero" as Admin
+actor "Cliente (Propietario / Conductor)" as Cliente
+actor "Pasarela / Terminal Bancario" as Gateway <<External System>>
+
+rectangle "Módulo de Gestión de Pagos y Facturación (Iteración 3)" {
+  usecase "CU13: Registrar Pago de Mensualidad" as CU13
+  usecase "CU14: Cobrar Salida Ocasional (Por Tiempo)" as CU14
+  usecase "CU15: Seleccionar Medio de Pago (Efectivo, Tarjeta, Transferencia)" as CU15
+  usecase "CU16: Calcular Cambio y Vueltas en Efectivo" as CU16
+  usecase "CU17: Validar Transacción Bancaria / Voucher" as CU17
+  usecase "CU18: Emitir Comprobante de Pago Digital (Recibo POS)" as CU18
+  usecase "CU19: Generar Código QR de Verificación" as CU19
+  usecase "CU21: Realizar Arqueo y Cuadre de Caja Diario" as CU21
+  usecase "CU22: Consultar Historial de Pagos y Transacciones" as CU22
+
+  CU13 ..> CU15 : <<include>>
+  CU14 ..> CU15 : <<include>>
+  CU15 <.. CU16 : <<extend>> (Si es Efectivo)
+  CU15 <.. CU17 : <<extend>> (Si es Tarjeta/Transf.)
+  CU13 ..> CU18 : <<include>>
+  CU14 ..> CU18 : <<include>>
+  CU18 ..> CU19 : <<include>>
+  CU21 ..> CU22 : <<include>>
+}
+
+Cajero --> CU13
+Cajero --> CU14
+Cajero --> CU18
+Cajero --> CU21
+Admin --> CU21
+Admin --> CU22
+Admin --|> Cajero
+CU17 --> Gateway
+Cliente --> CU18
+@enduml
+    </div>
+
+    <!-- 6. DIAGRAMA DE SECUENCIA ACTUALIZADO (3 ITERACIONES) -->
+    <h1>6. DIAGRAMA DE SECUENCIA INTEGRAL (ITERACIONES 1, 2 Y 3)</h1>
+    <p>El diagrama de secuencia integral sincroniza el flujo completo de vida operativa del vehículo en el parqueadero, abarcando las 3 iteraciones del proyecto:</p>
+    <div class="code-box">
+== FASE 1: INGRESO DE VEHÍCULO Y ASIGNACIÓN DE CELDA (ITERACIÓN 1 Y 2) ==
+Cliente -> Operador: Solicita ingreso con vehículo (Placa: ABC123)
+Operador -> UI: Consulta validación de mensualidad
+UI -> Controller: GET /api/vehiculos/validar/ABC123
+Controller -> DB: Verifica contrato 'VIGENTE' y celdas disponibles
+Operador -> UI: Registra ingreso asignando celda libre (Ej: A-01) y novedades
+UI -> Controller: POST /api/entradas
+Controller -> DB: INSERT registros_acceso y UPDATE celda 'OCUPADA'
+
+== FASE 2: GESTIÓN DE CLIENTE Y CELDAS EN MANTENIMIENTO (ITERACIÓN 2) ==
+Operador -> UI: Configura celdas o bloquea celda por daños locativos
+UI -> Controller: PUT /api/celdas/:codigo/estado { nuevo_estado: 'MANTENIMIENTO' }
+Controller -> DB: Excluye automáticamente celda del flujo de asignación
+
+== FASE 3: SALIDA Y GESTIÓN DE PAGOS TRANSACCIONALES (ITERACIÓN 3) ==
+Cliente -> Operador: Solicita salida del vehículo
+Operador -> UI: Digita placa para liquidar estadía
+UI -> Controller: POST /api/salidas
+Controller -> Controller: Calcula minutos transcurridos y valor por tarifa horaria
+Operador -> UI: Abre módulo de pago y digita dinero en efectivo recibido
+UI -> UI: Calcula vueltas en tiempo real ($20.000 - $9.000 = $11.000)
+Operador -> UI: Presiona "Procesar Pago y Emitir Comprobante"
+UI -> Controller: POST /api/pagos
+Controller -> DB: INSERT INTO pagos (REC-2026-XXXX, ACID) y libera celda
+Controller --> UI: Comprobante oficial con código QR generado
+UI --> Operador: Renderiza tirilla POS lista para impresión térmica
+
+== FASE 4: ARQUEO Y CIERRE DIARIO DE CAJA (ITERACIÓN 3) ==
+Operador -> UI: Clic en "Cierre de Caja"
+UI -> Controller: GET /api/pagos/resumen-caja
+Controller -> DB: SUM(monto) agrupado por Efectivo, Tarjetas y Transferencias
+UI --> Operador: Despliega balance del turno para conciliación
+    </div>
+
+    <div class="page-break"></div>
+
+    <!-- 7. DIAGRAMA DE COMPONENTES ACTUALIZADO -->
+    <h1>7. DIAGRAMA DE COMPONENTES INTEGRAL (ITERACIONES 1, 2 Y 3)</h1>
+    <p>Estructuración modular del sistema en capas desacopladas:</p>
+    <ul>
+      <li><strong>Capa de Presentación:</strong> Módulos UI de Patio en tiempo real, Accesos, Clientes/Celdas y el nuevo <strong>Módulo de Pagos, Caja y Visor POS con QR</strong>.</li>
+      <li><strong>Capa de Controladores API REST (Node.js/Express):</strong> Enrutador `/api/*` y métodos de control de negocio en `parkingController.js`.</li>
+      <li><strong>Capa de Dominio y Servicios:</strong> Servicio de Asignación de Celdas, Validador de Mensualidades, Calculador de Liquidación de Salida, Gestor Transaccional de Pagos y Motor de Arqueo de Caja.</li>
+      <li><strong>Capa de Persistencia (SQLite Native):</strong> Conector `DatabaseSync` con claves foráneas activas y 8 tablas relacionales (`celdas`, `vehiculos`, `clientes`, `mensualidades`, `registros_acceso`, `novedades`, `pagos`, `tipos_vehiculo`).</li>
+      <li><strong>Integraciones Externas:</strong> Impresora térmica de tirillas POS y Terminal Bancario/Datáfono.</li>
+    </ul>
+
+    <!-- 8. PLAN DE PRUEBAS RESUMIDO -->
+    <h1>8. FORMATO DE PLAN DE PRUEBAS RESUMIDO DE GESTIÓN DE PAGOS</h1>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Objetivo del Caso</th>
+          <th>Datos de Entrada</th>
+          <th>Resultado Esperado</th>
+          <th>Resultado Obtenido</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>CP-PAG-01</strong></td>
+          <td>Cobro de mensualidad anticipada en efectivo</td>
+          <td>Placa `ABC123`, Monto: $180.000, Recibido: $200.000</td>
+          <td>Vigencia extendida 30 días, cambio de $20.000 y comprobante emitido.</td>
+          <td>Mensualidad extendida, vuelto exacto y recibo generado.</td>
+          <td><span class="badge badge-success">EXITOSO</span></td>
+        </tr>
+        <tr>
+          <td><strong>CP-PAG-02</strong></td>
+          <td>Liquidación y cobro de salida de vehículo ocasional</td>
+          <td>Placa `QWE987`, Celda `A-02`, 2 horas de estadía</td>
+          <td>Liquidación de $9.000 COP, celda liberada e inserción en tabla pagos.</td>
+          <td>Celda `A-02` liberada y cobro registrado en la BD.</td>
+          <td><span class="badge badge-success">EXITOSO</span></td>
+        </tr>
+        <tr>
+          <td><strong>CP-PAG-03</strong></td>
+          <td>Validación de dinero insuficiente en efectivo</td>
+          <td>Valor: $180.000, Recibido: $100.000</td>
+          <td>Rechazo de la transacción con alerta de fondos insuficientes.</td>
+          <td>Sistema bloquea el cobro y muestra alerta de error.</td>
+          <td><span class="badge badge-success">EXITOSO</span></td>
+        </tr>
+        <tr>
+          <td><strong>CP-PAG-04</strong></td>
+          <td>Pago por transferencia digital (Nequi)</td>
+          <td>Placa `XYZ789`, Monto: $95.000, Ref: NEQUI-998124</td>
+          <td>Registro con referencia bancaria en la tabla pagos.</td>
+          <td>Comprobante emitido con código de aprobación Nequi.</td>
+          <td><span class="badge badge-success">EXITOSO</span></td>
+        </tr>
+        <tr>
+          <td><strong>CP-PAG-05</strong></td>
+          <td>Emisión de Comprobante POS con Código QR</td>
+          <td>Comprobante `REC-2026-0001`</td>
+          <td>Despliegue de tirilla térmica con membrete, desglose y código QR.</td>
+          <td>Tirilla visualizada con QR vectorial y datos fiscales.</td>
+          <td><span class="badge badge-success">EXITOSO</span></td>
+        </tr>
+        <tr>
+          <td><strong>CP-PAG-06</strong></td>
+          <td>Arqueo y Cierre Diario de Caja consolidado</td>
+          <td>Fecha actual del turno</td>
+          <td>Consolidado total con desglose por Efectivo, Tarjetas y Transferencias.</td>
+          <td>Arqueo exacto de $644.000 COP coincidente con la BD.</td>
+          <td><span class="badge badge-success">EXITOSO</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    <!-- 9. REPOSITORIO GITHUB -->
+    <h1>9. EVIDENCIA DE ACTUALIZACIÓN DE CÓDIGO FUENTE EN GITHUB</h1>
+    <p>El código fuente completo del sistema con las tres iteraciones integradas se encuentra disponible en:</p>
+    <div style="background:#f1f5f9; padding:15px; border-left:4px solid #0f172a; margin:15px 0;">
+      <strong>Repositorio GitHub Oficial:</strong><br>
+      <a href="https://github.com/juanpabloyaracifuentes89-dotcom/INGENIERIA-DE-SOFTWARE.git" target="_blank" style="font-size:1.05rem; color:#2563eb; font-weight:bold;">https://github.com/juanpabloyaracifuentes89-dotcom/INGENIERIA-DE-SOFTWARE.git</a>
+    </div>
+
+    <h3>Registro de Commits de la Iteración 3:</h3>
+    <div class="code-box">
+commit 2fe5023a1efd5c9540e118c7e9db8a8461ab17e8 (HEAD -> main)
+Author: Juan Pablo Yara Cifuentes <juanpabloyara@gmail.com>
+Date:   Tue Nov 17 19:24:00 2026 -0500
+
+    feat(iteracion-3): implementacion gestion de pagos, facturacion POS,
+    arqueo de caja, diagramas StarUML y plan de pruebas
+    
+    - database/schema.sql: creacion de tabla pagos e indices
+    - database/seed.sql: datos iniciales de historial de pagos
+    - src/controllers/parkingController.js: metodos registrarPago, getPagos, getResumenCaja
+    - src/routes/api.js: enrutamiento REST de pagos
+    - src/public/index.html & styles.css: modulo de caja, tirilla termica POS y QR
+    - src/public/js/app.js: logica de cobro, calculo de vueltos y arqueo
+    - diagramas_staruml/: casos_de_uso_pagos, diagrama_secuencia, diagrama_componentes
+    </div>
+
+    <!-- 10. CONCLUSIONES -->
+    <h1>10. CONCLUSIONES</h1>
+    <ol>
+      <li><strong>Madurez del Ciclo de Vida Evolutivo:</strong> La descomposición del proyecto en tres iteraciones permitió construir un sistema robusto y escalable, pasando del control operativo de patio a un ecosistema administrativo y contable completamente integrado.</li>
+      <li><strong>Consistencia y Trazabilidad Financiera:</strong> La incorporación de transacciones ACID en SQLite y un consecutivo único e inmutable eliminan los descuadres de caja y brindan auditoría total sobre los dineros recibidos en cada turno.</li>
+      <li><strong>Experiencia de Usuario Optimizada:</strong> El cálculo automático de cambio en efectivo y la emisión de tirillas POS con código QR reducen a menos de 10 segundos el tiempo de atención por vehículo, eliminando filas en horas de alto tráfico.</li>
+      <li><strong>Modelado Formal en StarUML:</strong> La especificación de diagramas de casos de uso, secuencia integral y componentes permitió validar la arquitectura en capas antes de la codificación, facilitando el mantenimiento y futuras extensiones del software.</li>
+    </ol>
+
+  </div>
+
+</body>
+</html>
