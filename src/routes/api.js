@@ -21,6 +21,12 @@ router.post('/salidas', parkingController.registrarSalida);
 router.get('/novedades', parkingController.getNovedades);
 router.post('/novedades', parkingController.registrarNovedad);
 
+// Rutas de Pagos y Facturación (Iteración 3)
+router.get('/pagos', parkingController.getPagos);
+router.post('/pagos', parkingController.registrarPago);
+router.get('/pagos/resumen-caja', parkingController.getResumenCaja);
+router.get('/pagos/comprobante/:id', parkingController.getComprobantePago);
+
 // Estadísticas en tiempo real
 router.get('/stats', parkingController.getStats);
 

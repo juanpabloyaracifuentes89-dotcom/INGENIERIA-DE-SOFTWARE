@@ -279,6 +279,23 @@ const parkingController = {
       `);
       updateCelda.run(registroActivo.codigo_celda);
 
+      // Si hubo cobro (vehículo ocasional), registrar automáticamente la transacción en la tabla pagos (Iteración 3)
+      let comprobanteGenerado = null;
+      if (totalPagar > 0) {
+        const countRow = db.prepare('SELECT COUNT(*) as total FROM pagos').get();
+        const consecutivo = ((countRow ? countRow.total : 0) + 1).toString().padStart(4, '0');
+        comprobanteGenerado = `REC-2026-${consecutivo}`;
+
+        db.prepare(`
+          INSERT INTO pagos (
+            numero_comprobante, tipo_pago, id_registro_acceso, id_mensualidad,
+            placa, monto, metodo_pago, dinero_recibido, dinero_cambio,
+            referencia_transaccion, operador_caja, fecha_hora, estado
+          )
+          VALUES (?, 'TIEMPO_OCASIONAL', ?, NULL, ?, ?, 'EFECTIVO', ?, 0, 'COBRO-SALIDA', ?, datetime('now', 'localtime'), 'APROBADO')
+        `).run(comprobanteGenerado, registroActivo.id, registroActivo.placa, totalPagar, totalPagar, operador);
+      }
+
       // Consultar registro actualizado
       const ticketSalida = {
         id_registro: registroActivo.id,
@@ -292,7 +309,8 @@ const parkingController = {
         horas_cobradas: horasFraccion,
         total_pagar: totalPagar,
         detalle_cobro: detalleCobro,
-        operador_salida: operador
+        operador_salida: operador,
+        numero_comprobante: comprobanteGenerado
       };
 
       return res.json({
@@ -534,6 +552,268 @@ const parkingController = {
     } catch (error) {
       console.error('Error al cambiar estado de celda:', error);
       return res.status(500).json({ success: false, message: 'Error interno al actualizar celda', error: error.message });
+    }
+  },
+
+  // ============================================================================
+  // ITERACIÓN 3: MÓDULO DE GESTIÓN DE PAGOS Y FACTURACIÓN
+  // ============================================================================
+
+  // 11. Registrar Pago (Mensualidad o Tiempo Ocasional)
+  registrarPago: (req, res) => {
+    try {
+      let {
+        tipo_pago,              // 'MENSUALIDAD' o 'TIEMPO_OCASIONAL'
+        placa,
+        id_cliente,
+        id_registro_acceso,
+        id_mensualidad,
+        monto,
+        metodo_pago,            // 'EFECTIVO', 'TARJETA_DEBITO', 'TARJETA_CREDITO', 'TRANSFERENCIA'
+        dinero_recibido,
+        referencia_transaccion,
+        operador_caja,
+        meses_a_pagar
+      } = req.body;
+
+      placa = (placa || '').toUpperCase().trim();
+      metodo_pago = (metodo_pago || 'EFECTIVO').toUpperCase();
+      monto = parseFloat(monto) || 0;
+      dinero_recibido = parseFloat(dinero_recibido) || monto;
+      operador_caja = operador_caja || 'Cajero Principal';
+      tipo_pago = (tipo_pago || 'MENSUALIDAD').toUpperCase();
+
+      if (!placa) {
+        return res.status(400).json({ success: false, message: 'La placa del vehículo es obligatoria.' });
+      }
+
+      if (monto <= 0) {
+        return res.status(400).json({ success: false, message: 'El monto a pagar debe ser mayor a 0.' });
+      }
+
+      if (metodo_pago === 'EFECTIVO' && dinero_recibido < monto) {
+        return res.status(400).json({
+          success: false,
+          message: `El dinero recibido ($${dinero_recibido.toLocaleString('es-CO')}) es menor al valor a pagar ($${monto.toLocaleString('es-CO')}).`
+        });
+      }
+
+      const dinero_cambio = metodo_pago === 'EFECTIVO' ? Math.max(0, dinero_recibido - monto) : 0;
+      const refFinal = referencia_transaccion || (metodo_pago === 'EFECTIVO' ? 'EFECTIVO' : `AUTO-${Date.now().toString().slice(-6)}`);
+
+      // Generar consecutivo de comprobante: REC-2026-000X
+      const countRow = db.prepare('SELECT COUNT(*) as total FROM pagos').get();
+      const consecutivo = ((countRow ? countRow.total : 0) + 1).toString().padStart(4, '0');
+      const numero_comprobante = `REC-2026-${consecutivo}`;
+
+      let nuevoIdMensualidad = id_mensualidad || null;
+
+      // Si es pago de mensualidad, renovar o crear la mensualidad en la base de datos
+      if (tipo_pago === 'MENSUALIDAD') {
+        const meses = parseInt(meses_a_pagar) || 1;
+        const dias = meses * 30;
+
+        // Buscar cliente si no vino id_cliente
+        if (!id_cliente) {
+          const vehiculoRow = db.prepare('SELECT id_cliente FROM vehiculos WHERE placa = ?').get(placa);
+          if (vehiculoRow && vehiculoRow.id_cliente) {
+            id_cliente = vehiculoRow.id_cliente;
+          }
+        }
+
+        if (id_cliente) {
+          // Revisar si ya tiene mensualidad vigente para extenderla, o iniciar desde hoy
+          const ultimaMensualidad = db.prepare(`
+            SELECT fecha_fin FROM mensualidades
+            WHERE placa = ? AND estado = 'VIGENTE' AND fecha_fin >= date('now')
+            ORDER BY fecha_fin DESC LIMIT 1
+          `).get(placa);
+
+          let fechaInicioStr = "date('now')";
+          let fechaFinStr = `date('now', '+${dias} days')`;
+
+          if (ultimaMensualidad && ultimaMensualidad.fecha_fin) {
+            fechaInicioStr = `'${ultimaMensualidad.fecha_fin}'`;
+            fechaFinStr = `date('${ultimaMensualidad.fecha_fin}', '+${dias} days')`;
+          }
+
+          const insertMensualidad = db.prepare(`
+            INSERT INTO mensualidades (id_cliente, placa, fecha_inicio, fecha_fin, valor_pagado, estado)
+            VALUES (?, ?, ${fechaInicioStr}, ${fechaFinStr}, ?, 'VIGENTE')
+          `);
+          const resM = insertMensualidad.run(id_cliente, placa, monto);
+          nuevoIdMensualidad = Number(resM.lastInsertRowid);
+        }
+      }
+
+      // Insertar en tabla pagos
+      const insertPago = db.prepare(`
+        INSERT INTO pagos (
+          numero_comprobante, tipo_pago, id_registro_acceso, id_mensualidad,
+          placa, monto, metodo_pago, dinero_recibido, dinero_cambio,
+          referencia_transaccion, operador_caja, fecha_hora, estado
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'), 'APROBADO')
+      `);
+
+      const resPago = insertPago.run(
+        numero_comprobante,
+        tipo_pago,
+        id_registro_acceso || null,
+        nuevoIdMensualidad,
+        placa,
+        monto,
+        metodo_pago,
+        dinero_recibido,
+        dinero_cambio,
+        refFinal,
+        operador_caja
+      );
+
+      const idPagoCreado = Number(resPago.lastInsertRowid);
+
+      // Consultar detalle completo del pago creado
+      const pagoCreado = db.prepare(`
+        SELECT p.*, v.marca, v.modelo, tv.nombre as tipo_vehiculo,
+               cl.documento as cliente_doc, cl.nombres as cliente_nombres, cl.apellidos as cliente_apellidos,
+               cl.telefono as cliente_telefono
+        FROM pagos p
+        LEFT JOIN vehiculos v ON p.placa = v.placa
+        LEFT JOIN tipos_vehiculo tv ON v.id_tipo_vehiculo = tv.id
+        LEFT JOIN clientes cl ON v.id_cliente = cl.id
+        WHERE p.id = ?
+      `).get(idPagoCreado);
+
+      return res.status(201).json({
+        success: true,
+        message: `Pago registrado con éxito. Comprobante N° ${numero_comprobante}`,
+        data: pagoCreado
+      });
+    } catch (error) {
+      console.error('Error al registrar pago:', error);
+      return res.status(500).json({ success: false, message: 'Error interno al registrar pago', error: error.message });
+    }
+  },
+
+  // 12. Obtener Historial de Pagos
+  getPagos: (req, res) => {
+    try {
+      const { tipo, metodo, fecha } = req.query;
+      let query = `
+        SELECT p.*, 
+               v.marca, v.modelo, tv.nombre as tipo_vehiculo,
+               cl.documento as cliente_doc, cl.nombres || ' ' || cl.apellidos as cliente_nombre
+        FROM pagos p
+        LEFT JOIN vehiculos v ON p.placa = v.placa
+        LEFT JOIN tipos_vehiculo tv ON v.id_tipo_vehiculo = tv.id
+        LEFT JOIN clientes cl ON v.id_cliente = cl.id
+        WHERE 1=1
+      `;
+      const params = [];
+
+      if (tipo) {
+        query += ` AND p.tipo_pago = ?`;
+        params.push(tipo.toUpperCase());
+      }
+      if (metodo) {
+        query += ` AND p.metodo_pago = ?`;
+        params.push(metodo.toUpperCase());
+      }
+      if (fecha) {
+        query += ` AND date(p.fecha_hora) = date(?)`;
+        params.push(fecha);
+      }
+
+      query += ` ORDER BY p.id DESC`;
+
+      const stmt = db.prepare(query);
+      const pagos = stmt.all(...params);
+
+      return res.json({ success: true, data: pagos });
+    } catch (error) {
+      console.error('Error al consultar pagos:', error);
+      return res.status(500).json({ success: false, message: 'Error interno al consultar historial de pagos', error: error.message });
+    }
+  },
+
+  // 13. Obtener Comprobante Individual
+  getComprobantePago: (req, res) => {
+    try {
+      const id = req.params.id;
+      const stmt = db.prepare(`
+        SELECT p.*, 
+               v.marca, v.modelo, v.color, tv.nombre as tipo_vehiculo,
+               cl.documento as cliente_doc, cl.nombres, cl.apellidos, cl.telefono, cl.email,
+               m.fecha_inicio as mensualidad_inicio, m.fecha_fin as mensualidad_fin
+        FROM pagos p
+        LEFT JOIN vehiculos v ON p.placa = v.placa
+        LEFT JOIN tipos_vehiculo tv ON v.id_tipo_vehiculo = tv.id
+        LEFT JOIN clientes cl ON v.id_cliente = cl.id
+        LEFT JOIN mensualidades m ON p.id_mensualidad = m.id
+        WHERE p.id = ? OR p.numero_comprobante = ?
+      `);
+      const comprobante = stmt.get(id, id);
+
+      if (!comprobante) {
+        return res.status(404).json({ success: false, message: 'Comprobante no encontrado' });
+      }
+
+      return res.json({ success: true, data: comprobante });
+    } catch (error) {
+      console.error('Error al consultar comprobante:', error);
+      return res.status(500).json({ success: false, message: 'Error al consultar comprobante', error: error.message });
+    }
+  },
+
+  // 14. Resumen y Cuadre de Caja (Arqueo Diario)
+  getResumenCaja: (req, res) => {
+    try {
+      const fecha = req.query.fecha || new Date().toISOString().split('T')[0];
+
+      // Totales del día
+      const totalGeneral = db.prepare(`
+        SELECT 
+          COUNT(*) as cantidad_transacciones,
+          COALESCE(SUM(monto), 0) as total_recaudado
+        FROM pagos
+        WHERE date(fecha_hora) = date(?) AND estado = 'APROBADO'
+      `).get(fecha);
+
+      // Desglose por método de pago
+      const porMetodo = db.prepare(`
+        SELECT 
+          metodo_pago,
+          COUNT(*) as transacciones,
+          COALESCE(SUM(monto), 0) as subtotal
+        FROM pagos
+        WHERE date(fecha_hora) = date(?) AND estado = 'APROBADO'
+        GROUP BY metodo_pago
+      `).all(fecha);
+
+      // Desglose por concepto
+      const porConcepto = db.prepare(`
+        SELECT 
+          tipo_pago,
+          COUNT(*) as transacciones,
+          COALESCE(SUM(monto), 0) as subtotal
+        FROM pagos
+        WHERE date(fecha_hora) = date(?) AND estado = 'APROBADO'
+        GROUP BY tipo_pago
+      `).all(fecha);
+
+      return res.json({
+        success: true,
+        data: {
+          fecha,
+          total_transacciones: totalGeneral.cantidad_transacciones,
+          total_recaudado: totalGeneral.total_recaudado,
+          desglose_metodos: porMetodo,
+          desglose_conceptos: porConcepto
+        }
+      });
+    } catch (error) {
+      console.error('Error en arqueo de caja:', error);
+      return res.status(500).json({ success: false, message: 'Error al calcular arqueo de caja', error: error.message });
     }
   }
 };

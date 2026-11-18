@@ -14,7 +14,7 @@
       <div class="logo-icon"><i class="fa-solid fa-square-parking"></i></div>
       <div class="brand-text">
         <h1>AUTOS COLOMBIA</h1>
-        <span>Gestión de Entrada y Salida de Vehículos &bull; Iteración 1</span>
+        <span>Sistema Integrado &bull; Iteraciones 1, 2 y 3 (Gestión de Pagos)</span>
       </div>
     </div>
     <div class="nav-right">
@@ -89,6 +89,12 @@
         <button class="btn btn-secondary" id="btnOpenModalNuevaCelda" style="background:#0d9488; color:#fff;">
           <i class="fa-solid fa-square-plus"></i> + Configurar Celda
         </button>
+        <button class="btn btn-primary" id="btnOpenModalPago" style="background:#059669; color:#fff;">
+          <i class="fa-solid fa-cash-register"></i> + Registrar Pago
+        </button>
+        <button class="btn btn-secondary" id="btnOpenModalArqueo" style="background:#7c3aed; color:#fff;">
+          <i class="fa-solid fa-vault"></i> Cierre de Caja
+        </button>
       </div>
       <div class="search-filter">
         <i class="fa-solid fa-magnifying-glass"></i>
@@ -106,6 +112,9 @@
       </button>
       <button class="tab-btn" data-tab="tab-mensualidades">
         <i class="fa-solid fa-address-book"></i> Clientes Mensuales
+      </button>
+      <button class="tab-btn" data-tab="tab-pagos">
+        <i class="fa-solid fa-receipt"></i> Gestión de Pagos y Caja (Iteración 3)
       </button>
       <button class="tab-btn" data-tab="tab-novedades">
         <i class="fa-solid fa-clipboard-list"></i> Historial de Novedades
@@ -203,6 +212,78 @@
           </thead>
           <tbody id="tbodyNovedades">
             <!-- Filas dinámicas -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 5. GESTIÓN DE PAGOS Y CAJA (ITERACIÓN 3) -->
+    <section id="tab-pagos" class="tab-content">
+      <div class="section-header">
+        <h2><i class="fa-solid fa-file-invoice-dollar"></i> Control de Caja y Registro de Pagos (Iteración 3)</h2>
+        <div style="display:flex; gap:10px;">
+          <button class="btn btn-sm btn-primary" style="background:#059669;" onclick="app.openModalPagoRapido()">
+            <i class="fa-solid fa-plus"></i> Registrar Cobro
+          </button>
+          <button class="btn btn-sm btn-secondary" style="background:#7c3aed; color:#fff;" onclick="app.verArqueoCaja()">
+            <i class="fa-solid fa-calculator"></i> Ver Arqueo Diario
+          </button>
+          <button class="btn btn-sm btn-secondary" onclick="app.loadPagos()">
+            <i class="fa-solid fa-rotate"></i> Actualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Tarjetas Resumen de Caja en Vivo -->
+      <div class="cash-summary-grid">
+        <div class="cash-kpi-card">
+          <div class="kpi-icon recaudo"><i class="fa-solid fa-money-bill-wave"></i></div>
+          <div class="cash-kpi-data">
+            <span class="kpi-val" id="kpiRecaudoTotal">$0</span>
+            <span class="kpi-sub">Total Recaudado Hoy</span>
+          </div>
+        </div>
+        <div class="cash-kpi-card">
+          <div class="kpi-icon efectivo"><i class="fa-solid fa-wallet"></i></div>
+          <div class="cash-kpi-data">
+            <span class="kpi-val" id="kpiRecaudoEfectivo">$0</span>
+            <span class="kpi-sub">Efectivo en Caja</span>
+          </div>
+        </div>
+        <div class="cash-kpi-card">
+          <div class="kpi-icon digital"><i class="fa-solid fa-credit-card"></i></div>
+          <div class="cash-kpi-data">
+            <span class="kpi-val" id="kpiRecaudoDigital">$0</span>
+            <span class="kpi-sub">Tarjetas / Transferencias</span>
+          </div>
+        </div>
+        <div class="cash-kpi-card">
+          <div class="kpi-icon tickets"><i class="fa-solid fa-receipt"></i></div>
+          <div class="cash-kpi-data">
+            <span class="kpi-val" id="kpiTransaccionesTotal">0</span>
+            <span class="kpi-sub">Comprobantes Emitidos</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabla de Transacciones -->
+      <div class="table-responsive">
+        <table class="data-table" id="tablaPagos">
+          <thead>
+            <tr>
+              <th>N° Comprobante</th>
+              <th>Fecha y Hora</th>
+              <th>Placa</th>
+              <th>Vehículo / Cliente</th>
+              <th>Concepto</th>
+              <th>Método de Pago</th>
+              <th>Monto Total</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyPagos">
+            <!-- Filas dinámicas de pagos -->
           </tbody>
         </table>
       </div>
@@ -553,6 +634,245 @@
             <button type="submit" class="btn btn-warning"><i class="fa-solid fa-wrench"></i> Aplicar Cambio de Estado</button>
           </div>
         </form>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: REGISTRAR PAGO (ITERACIÓN 3) -->
+  <div class="modal-overlay" id="modalRegistrarPago">
+    <div class="modal-dialog">
+      <div class="modal-header" style="background:#059669;">
+        <h3><i class="fa-solid fa-cash-register"></i> Registrar Pago / Cobro (Iteración 3)</h3>
+        <button class="close-modal" onclick="app.closeModal('modalRegistrarPago')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="formRegistrarPago">
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="selectTipoPago">Concepto de Cobro <span class="req">*</span></label>
+              <select id="selectTipoPago" required>
+                <option value="MENSUALIDAD">Pago / Renovación de Mensualidad</option>
+                <option value="TIEMPO_OCASIONAL">Cobro de Estadía por Horas (Ocasional)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label for="inputPlacaPago">Placa del Vehículo <span class="req">*</span></label>
+              <div class="input-with-button">
+                <input type="text" id="inputPlacaPago" placeholder="Ej: ABC123" required maxlength="8" style="text-transform:uppercase;">
+                <button type="button" class="btn btn-outline" id="btnBuscarVehiculoPago">Buscar</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Banner info vehículo / cliente -->
+          <div id="bannerInfoPago" class="validation-banner hidden" style="margin-bottom:15px; border-left:4px solid #059669; background:#ecfdf5; padding:10px 14px; border-radius:6px; font-size:0.88rem;"></div>
+
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label for="inputMontoPago">Valor a Pagar (COP) <span class="req">*</span></label>
+              <input type="number" id="inputMontoPago" placeholder="180000" required min="1000" step="500">
+            </div>
+            <div class="form-group flex-1">
+              <label for="selectMetodoPago">Método de Pago <span class="req">*</span></label>
+              <select id="selectMetodoPago" required>
+                <option value="EFECTIVO">💵 Efectivo</option>
+                <option value="TRANSFERENCIA">📱 Transferencia PSE / Nequi / Bancolombia</option>
+                <option value="TARJETA_DEBITO">💳 Tarjeta Débito (Datáfono)</option>
+                <option value="TARJETA_CREDITO">💳 Tarjeta Crédito</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Campos dinámicos para efectivo / voucher -->
+          <div class="form-row" id="rowEfectivo">
+            <div class="form-group flex-1">
+              <label for="inputDineroRecibido">Dinero Recibido (COP) <span class="req">*</span></label>
+              <input type="number" id="inputDineroRecibido" placeholder="Ej: 200000" min="0">
+            </div>
+            <div class="form-group flex-1">
+              <label for="inputCambioVueltas">Cambio / Vueltas a Devolver</label>
+              <input type="text" id="inputCambioVueltas" value="$0" readonly style="font-weight:bold; color:#059669; background:#f8fafc;">
+            </div>
+          </div>
+
+          <div class="form-group" id="rowReferencia" style="display:none;">
+            <label for="inputReferenciaTransaccion">N° de Aprobación / Voucher / Referencia Nequi</label>
+            <input type="text" id="inputReferenciaTransaccion" placeholder="Ej: VOUCHER-9874 o NEQUI-1284">
+          </div>
+
+          <div class="form-group">
+            <label for="inputOperadorCaja">Cajero / Operador Responsable</label>
+            <input type="text" id="inputOperadorCaja" value="Cajero Principal - Juan Pérez" readonly>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalRegistrarPago')">Cancelar</button>
+            <button type="submit" class="btn btn-primary" style="background:#059669;"><i class="fa-solid fa-receipt"></i> Procesar Pago y Emitir Comprobante</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: COMPROBANTE DE PAGO DIGITAL (TIRILLA TÉRMICA POS CON QR) -->
+  <div class="modal-overlay" id="modalComprobante">
+    <div class="modal-dialog" style="max-width:440px;">
+      <div class="modal-header" style="background:#1e293b;">
+        <h3><i class="fa-solid fa-receipt"></i> Comprobante de Pago Digital</h3>
+        <button class="close-modal" onclick="app.closeModal('modalComprobante')">&times;</button>
+      </div>
+      <div class="modal-body">
+        
+        <div class="receipt-container" id="receiptPrintArea">
+          <div class="receipt-header">
+            <h3>AUTOS COLOMBIA S.A.S</h3>
+            <p>NIT: 901.842.103-5 &bull; Régimen Común</p>
+            <p>Calle 50 # 45-20, Medellín, Colombia</p>
+            <p>PBX: (+57) 604 444 8899</p>
+            <div style="margin-top:8px; font-weight:bold; font-size:0.95rem;" id="recNumero">REC-2026-0000</div>
+            <div style="font-size:0.75rem; color:#64748b;" id="recFecha">2026-11-17 19:00:00</div>
+          </div>
+
+          <div class="receipt-body">
+            <div class="row-detail"><span>Placa:</span><strong id="recPlaca">---</strong></div>
+            <div class="row-detail"><span>Vehículo:</span><span id="recVehiculo">---</span></div>
+            <div class="row-detail"><span>Cliente:</span><span id="recCliente">Cliente Ocasional</span></div>
+            <div class="row-detail"><span>Doc. Identidad:</span><span id="recDoc">N/A</span></div>
+            <div class="row-detail"><span>Concepto:</span><strong id="recConcepto">---</strong></div>
+            <div class="row-detail"><span>Método Pago:</span><span id="recMetodo">EFECTIVO</span></div>
+            <div class="row-detail"><span>Referencia:</span><span id="recRef">EFECTIVO</span></div>
+            
+            <div class="row-detail total">
+              <span>TOTAL PAGADO:</span>
+              <span id="recTotal">$0 COP</span>
+            </div>
+
+            <div class="row-detail"><span>Recibido:</span><span id="recRecibido">$0 COP</span></div>
+            <div class="row-detail"><span>Cambio:</span><span id="recCambio">$0 COP</span></div>
+            <div class="row-detail"><span>Cajero:</span><span id="recCajero">Cajero Principal</span></div>
+          </div>
+
+          <!-- QR Code Simulado SVG -->
+          <div class="receipt-qr">
+            <svg viewBox="0 0 100 100" width="90" height="90">
+              <rect width="100" height="100" fill="#ffffff" />
+              <!-- Cuadros esquinas -->
+              <rect x="5" y="5" width="25" height="25" fill="#000000" />
+              <rect x="8" y="8" width="19" height="19" fill="#ffffff" />
+              <rect x="12" y="12" width="11" height="11" fill="#000000" />
+
+              <rect x="70" y="5" width="25" height="25" fill="#000000" />
+              <rect x="73" y="8" width="19" height="19" fill="#ffffff" />
+              <rect x="77" y="12" width="11" height="11" fill="#000000" />
+
+              <rect x="5" y="70" width="25" height="25" fill="#000000" />
+              <rect x="8" y="73" width="19" height="19" fill="#ffffff" />
+              <rect x="12" y="77" width="11" height="11" fill="#000000" />
+
+              <!-- Patrón interno de datos -->
+              <rect x="36" y="8" width="6" height="6" fill="#000000" />
+              <rect x="46" y="8" width="6" height="12" fill="#000000" />
+              <rect x="58" y="8" width="6" height="6" fill="#000000" />
+              <rect x="36" y="22" width="12" height="6" fill="#000000" />
+              <rect x="54" y="22" width="6" height="12" fill="#000000" />
+              <rect x="8" y="36" width="6" height="18" fill="#000000" />
+              <rect x="20" y="42" width="12" height="6" fill="#000000" />
+              <rect x="38" y="36" width="24" height="24" fill="#000000" />
+              <rect x="44" y="42" width="12" height="12" fill="#ffffff" />
+              <rect x="68" y="36" width="6" height="12" fill="#000000" />
+              <rect x="80" y="42" width="12" height="18" fill="#000000" />
+              <rect x="8" y="58" width="18" height="6" fill="#000000" />
+              <rect x="36" y="66" width="6" height="18" fill="#000000" />
+              <rect x="48" y="66" width="18" height="6" fill="#000000" />
+              <rect x="70" y="70" width="12" height="6" fill="#000000" />
+              <rect x="54" y="78" width="12" height="12" fill="#000000" />
+              <rect x="72" y="82" width="18" height="8" fill="#000000" />
+            </svg>
+            <div style="font-size:0.7rem; color:#64748b; margin-top:4px;">Verificación Electrónica DIAN / Autos Colombia</div>
+          </div>
+
+          <div class="receipt-footer">
+            <p>¡Gracias por su confianza!</p>
+            <p>Conserve este tiquete para retirar su vehículo o validar su mensualidad.</p>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content:space-between; margin-top:15px;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalComprobante')">Cerrar</button>
+          <button type="button" class="btn btn-primary" onclick="window.print()"><i class="fa-solid fa-print"></i> Imprimir Tirilla</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: ARQUEO Y CIERRE DE CAJA (ITERACIÓN 3) -->
+  <div class="modal-overlay" id="modalArqueoCaja">
+    <div class="modal-dialog">
+      <div class="modal-header" style="background:#7c3aed;">
+        <h3><i class="fa-solid fa-vault"></i> Arqueo y Cuadre de Caja Diario</h3>
+        <button class="close-modal" onclick="app.closeModal('modalArqueoCaja')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="margin-bottom:15px; display:flex; justify-content:space-between; align-items:center;">
+          <h4 id="arqueoFechaTitulo">Corte de Caja: 2026-11-17</h4>
+          <span class="badge badge-payment aprobado">Caja Abierta</span>
+        </div>
+
+        <div class="cash-summary-grid">
+          <div class="cash-kpi-card">
+            <div class="kpi-icon recaudo"><i class="fa-solid fa-sack-dollar"></i></div>
+            <div class="cash-kpi-data">
+              <span class="kpi-val" id="arqTotalRecaudado">$0</span>
+              <span class="kpi-sub">Total General del Día</span>
+            </div>
+          </div>
+          <div class="cash-kpi-card">
+            <div class="kpi-icon tickets"><i class="fa-solid fa-receipt"></i></div>
+            <div class="cash-kpi-data">
+              <span class="kpi-val" id="arqTotalTransacciones">0</span>
+              <span class="kpi-sub">Transacciones Procesadas</span>
+            </div>
+          </div>
+        </div>
+
+        <h4 style="margin:15px 0 10px 0; font-size:0.95rem; color:#334155;"><i class="fa-solid fa-chart-pie"></i> Desglose por Medio de Pago:</h4>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Medio de Pago</th>
+                <th>Transacciones</th>
+                <th>Subtotal (COP)</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyArqueoMetodos">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+
+        <h4 style="margin:20px 0 10px 0; font-size:0.95rem; color:#334155;"><i class="fa-solid fa-tags"></i> Desglose por Concepto:</h4>
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Concepto</th>
+                <th>Transacciones</th>
+                <th>Subtotal (COP)</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyArqueoConceptos">
+              <!-- Dinámico -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-footer" style="margin-top:20px;">
+          <button type="button" class="btn btn-secondary" onclick="app.closeModal('modalArqueoCaja')">Cerrar</button>
+          <button type="button" class="btn btn-primary" style="background:#7c3aed;" onclick="app.showToast('Informe de Arqueo Diario exportado con éxito', 'success')"><i class="fa-solid fa-file-pdf"></i> Exportar Informe de Cuadre</button>
+        </div>
 
       </div>
     </div>

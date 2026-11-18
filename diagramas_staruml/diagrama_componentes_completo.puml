@@ -1,0 +1,99 @@
+@startuml Diagrama_Componentes_Integral_AutosColombia
+!theme plain
+skinparam componentStyle uml2
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam roundCorner 10
+
+title DIAGRAMA DE COMPONENTES INTEGRAL (ITERACIONES 1, 2 Y 3)\nSISTEMA DE INFORMACIÓN PARQUEADERO "AUTOS COLOMBIA"
+
+package "Capa de Presentación (Frontend Web SPA)" {
+  [Módulo Vista Patio (HTML5/CSS3 Grid)] as CompPatioUI
+  [Módulo Control Acceso y Salidas] as CompAccesoUI
+  [Módulo Gestión Clientes y Celdas] as CompAdminUI
+  [Módulo Caja y Pagos (app.js)] as CompPagosUI
+  [Generador de Comprobantes POS y QR] as CompReciboUI
+}
+
+package "Capa de Enrutamiento y Servicios API (Node.js & Express)" {
+  [Servidor Express (server.js)] as HttpServer
+  [Enrutador REST (/api/*) (routes/api.js)] as ApiRouter
+  
+  package "Controladores (Controllers)" {
+    [parkingController (Módulo Accesos)] as CtrlAcceso
+    [parkingController (Módulo Celdas/Clientes)] as CtrlAdmin
+    [parkingController (Módulo Pagos y Caja)] as CtrlPagos
+  }
+}
+
+package "Capa de Lógica de Negocio y Dominio (Domain Services)" {
+  [Servicio de Asignación y Control de Celdas] as SvcCeldas
+  [Validador de Vigencia de Mensualidades] as SvcMensualidades
+  [Calculador de Tarifas y Liquidación de Salida] as SvcTarifas
+  [Gestor Transaccional de Pagos y Facturación] as SvcPagos
+  [Motor de Arqueo y Cierre Diario de Caja] as SvcArqueo
+}
+
+package "Capa de Persistencia y Acceso a Datos (Data Access Layer)" {
+  [Conector SQLite Nativo (DatabaseSync)] as DBConnector
+  
+  database "Base de Datos Relacional SQLite\n(database/parqueadero.db)" as DB {
+    [Tabla celdas] as TblCeldas
+    [Tabla vehiculos] as TblVehiculos
+    [Tabla clientes] as TblClientes
+    [Tabla mensualidades] as TblMensualidades
+    [Tabla registros_acceso] as TblAcceso
+    [Tabla novedades] as TblNovedades
+    [Tabla pagos (Iteración 3)] as TblPagos
+    [Tabla tipos_vehiculo] as TblTipos
+  }
+}
+
+cloud "Servicios y Dispositivos Externos" {
+  [Terminal Datáfono / Pasarela Bancaria] as ExtGateway
+  [Impresora Térmica POS (Tickets)] as ExtPrinter
+}
+
+' Interfaces y Conexiones UI -> Servidor
+CompPatioUI ..> HttpServer : HTTP GET
+CompAccesoUI ..> HttpServer : HTTP POST
+CompAdminUI ..> HttpServer : HTTP POST/PUT
+CompPagosUI ..> HttpServer : HTTP POST /api/pagos
+CompReciboUI ..> ExtPrinter : Orden de Impresión
+CompReciboUI ..> CompPagosUI : Datos de Comprobante
+
+HttpServer --> ApiRouter : Despacha Peticiones
+ApiRouter --> CtrlAcceso : /entradas, /salidas
+ApiRouter --> CtrlAdmin : /celdas, /clientes
+ApiRouter --> CtrlPagos : /pagos, /resumen-caja
+
+' Conexiones Controladores -> Servicios de Negocio
+CtrlAcceso --> SvcCeldas : Bloquear / Asignar
+CtrlAcceso --> SvcMensualidades : Verificar Cobertura
+CtrlAcceso --> SvcTarifas : Liquidar Estadía
+
+CtrlAdmin --> SvcCeldas : Cambiar Estado / Crear
+CtrlAdmin --> SvcMensualidades : Vincular Contrato
+
+CtrlPagos --> SvcPagos : Procesar Transacción
+CtrlPagos --> SvcArqueo : Generar Cuadre Diario
+SvcPagos ..> ExtGateway : Validación Voucher/Aprobación
+
+' Conexiones Servicios -> Persistencia
+SvcCeldas --> DBConnector : Lectura / Actualización Celdas
+SvcMensualidades --> DBConnector : Consulta y Registro Contratos
+SvcTarifas --> DBConnector : Consulta Tarifas y Tiempos
+SvcPagos --> DBConnector : Inserción Pagos (ACID)
+SvcArqueo --> DBConnector : Agrupación por Métodos
+
+DBConnector --> DB : Ejecución DDL / DML SQL
+DB --> TblCeldas
+DB --> TblVehiculos
+DB --> TblClientes
+DB --> TblMensualidades
+DB --> TblAcceso
+DB --> TblNovedades
+DB --> TblPagos
+DB --> TblTipos
+
+@enduml

@@ -1,0 +1,119 @@
+@startuml Diagrama_Secuencia_Integral_AutosColombia
+!theme plain
+autonumber "<b>[00]</b>"
+skinparam defaultFontName Arial
+skinparam roundCorner 8
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+
+title DIAGRAMA DE SECUENCIA INTEGRAL - CICLO DE VIDA COMPLETO (ITERACIONES 1, 2 Y 3)\nSISTEMA DE INFORMACIÓN PARQUEADERO "AUTOS COLOMBIA"
+
+box "Capa de Presentación (UI)" #E0F2FE
+  actor "Cliente / Conductor" as Cliente
+  actor "Operador / Cajero" as Operador
+  boundary "Interfaz Web\n(app.js / index.html)" as UI
+end box
+
+box "Capa de Negocio y Controladores" #FEF3C7
+  control "API Router & ParkingController\n(Node.js / Express)" as Controller
+  entity "Servicio Acceso & Celdas\n(Iteración 1 y 2)" as ServAcceso
+  entity "Servicio Facturación & Pagos\n(Iteración 3)" as ServPagos
+end box
+
+box "Capa de Persistencia y Datos" #DCFCE7
+  database "Motor de Base de Datos\n(parqueadero.db / SQLite)" as DB
+end box
+
+== FASE 1: INGRESO DE VEHÍCULO Y ASIGNACIÓN DE CELDA (ITERACIÓN 1 Y 2) ==
+
+Cliente -> Operador: Solicita ingreso con vehículo (Placa: ABC123)
+Operador -> UI: Ingresa placa y consulta estado
+UI -> Controller: GET /api/vehiculos/validar/ABC123
+Controller -> DB: SELECT * FROM vehiculos WHERE placa = ?
+DB --> Controller: Retorna datos de vehículo y cliente titular
+Controller -> DB: SELECT * FROM mensualidades WHERE placa = ? AND estado = 'VIGENTE'
+DB --> Controller: Mensualidad Vigente encontrada (o No Vigente)
+Controller --> UI: Estado de vehículo y mensualidad
+
+alt Celda en Mantenimiento o No Disponible (Iteración 2)
+  Operador -> UI: Verifica celdas disponibles
+  UI -> Controller: GET /api/celdas
+  Controller -> DB: SELECT * FROM celdas WHERE estado = 'DISPONIBLE'
+  DB --> Controller: Celdas libres (excluye MANTENIMIENTO y OCUPADA)
+  Controller --> UI: Lista de celdas libres
+end
+
+Operador -> UI: Registra ingreso asignando celda disponible (Ej: A-01) y novedades
+UI -> Controller: POST /api/entradas { placa, celda: 'A-01', observaciones }
+Controller -> ServAcceso: Procesar Entrada
+ServAcceso -> DB: INSERT INTO registros_acceso (placa, codigo_celda, fecha_hora_entrada, ...)
+ServAcceso -> DB: UPDATE celdas SET estado = 'OCUPADA', placa_actual = ? WHERE codigo = ?
+opt Presenta rayón o golpe
+  ServAcceso -> DB: INSERT INTO novedades (placa, tipo_novedad, gravedad, descripcion, ...)
+end
+DB --> ServAcceso: Registro confirmado
+ServAcceso --> Controller: Ticket de Ingreso Generado
+Controller --> UI: 201 Created (Confirmación y Ticket)
+UI --> Operador: Muestra ticket y actualiza patio gráfico
+Operador --> Cliente: Entrega comprobante de entrada / apertura de talanquera
+
+== FASE 2: GESTIÓN DE CLIENTE Y MENSUALIDAD (ITERACIÓN 2) ==
+
+opt El cliente desea afiliarse o renovar datos (Iteración 2)
+  Cliente -> Operador: Solicita registro como cliente mensual
+  Operador -> UI: Diligencia datos personales y placa
+  UI -> Controller: POST /api/clientes { documento, nombres, apellidos, placa, tipo }
+  Controller -> DB: INSERT INTO clientes (...) e INSERT INTO vehiculos (...)
+  DB --> Controller: Cliente y vehículo vinculados
+  Controller --> UI: Cliente registrado exitosamente
+end
+
+== FASE 3: SALIDA DEL VEHÍCULO Y GESTIÓN DE PAGOS (ITERACIÓN 3) ==
+
+Cliente -> Operador: Solicita retiro del vehículo (Placa: ABC123)
+Operador -> UI: Digita placa para liquidar salida
+UI -> Controller: POST /api/salidas { placa: 'ABC123' }
+Controller -> ServPagos: Calcular Liquidación de Tiempo y Tarifa
+ServPagos -> DB: SELECT * FROM registros_acceso WHERE placa = ? AND estado = 'ACTIVO'
+DB --> ServPagos: Retorna hora de entrada y modalidad de servicio
+
+alt Servicio Mensualidad Vigente
+  ServPagos -> ServPagos: Tarifa liquidada = $0 COP (Amparado por contrato)
+else Servicio Ocasional por Horas
+  ServPagos -> ServPagos: Calcular minutos transcurridos y fracción de horas
+  ServPagos -> ServPagos: Total = Horas * Tarifa_Hora_Vehiculo
+end
+
+ServPagos -> DB: UPDATE registros_acceso SET fecha_hora_salida = now(), estado = 'FINALIZADO'
+ServPagos -> DB: UPDATE celdas SET estado = 'DISPONIBLE', placa_actual = NULL WHERE codigo = ?
+DB --> ServPagos: Celda liberada en patio
+
+== FASE 4: COBRO, EMISIÓN DE COMPROBANTE Y ARQUEO DE CAJA (ITERACIÓN 3) ==
+
+opt Pago de Estadía Ocasional o Renovación de Mensualidad
+  Operador -> UI: Abre módulo de pago, confirma monto y selecciona método
+  Cliente -> Operador: Entrega dinero en efectivo ($20.000) o tarjeta
+  UI -> UI: Calcula vueltas/cambio dinámico ($20.000 - $9.000 = $11.000)
+  Operador -> UI: Presiona "Procesar Pago y Emitir Comprobante"
+  UI -> Controller: POST /api/pagos { tipo_pago, placa, monto, metodo_pago, recibido, cambio, operador }
+  Controller -> ServPagos: Registrar Transacción Financiera
+  ServPagos -> DB: Generar Consecutivo Único (REC-2026-XXXX)
+  ServPagos -> DB: INSERT INTO pagos (numero_comprobante, tipo_pago, monto, metodo_pago, dinero_recibido, dinero_cambio, ...)
+  DB --> ServPagos: Pago guardado y confirmado (ACID)
+  ServPagos --> Controller: Comprobante de Pago Oficial con QR
+  Controller --> UI: 201 Created (Datos de Comprobante)
+  UI -> UI: Renderiza Tirilla Térmica POS con Código QR y membrete
+  UI --> Operador: Muestra recibo digital listo para impresión
+  Operador --> Cliente: Entrega vuelto en efectivo y recibo oficial de caja
+end
+
+== FASE 5: CIERRE Y ARQUEO DIARIO DE CAJA (ITERACIÓN 3) ==
+
+Operador -> UI: Clic en "Arqueo y Cierre de Caja"
+UI -> Controller: GET /api/pagos/resumen-caja
+Controller -> DB: SELECT SUM(monto) FROM pagos WHERE date(fecha_hora) = date('now') GROUP BY metodo_pago
+DB --> Controller: Totales por Efectivo, Tarjetas y Transferencias
+Controller --> UI: Resumen de arqueo de caja diario
+UI --> Operador: Muestra reporte de cuadre y permite exportar informe
+
+@enduml

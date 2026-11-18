@@ -55,3 +55,10 @@ INSERT INTO registros_acceso (id, placa, codigo_celda, fecha_hora_entrada, fecha
 -- 7. NOVEDADES REGISTRADAS
 INSERT INTO novedades (id, id_registro_acceso, placa, fecha_hora, tipo_novedad, nivel_gravedad, descripcion, ubicacion_en_vehiculo) VALUES
 (1, 1, 'ABC123', datetime('now', '-2 hours'), 'RAYÓN', 'LEVE', 'Rayón superficial de 5 cm en puerta trasera derecha preexistente al ingreso', 'Puerta trasera derecha');
+
+-- 8. PAGOS INICIALES (ITERACIÓN 3: HISTORIAL DE PAGOS)
+INSERT INTO pagos (id, numero_comprobante, tipo_pago, id_registro_acceso, id_mensualidad, placa, monto, metodo_pago, dinero_recibido, dinero_cambio, referencia_transaccion, operador_caja, fecha_hora, estado) VALUES
+(1, 'REC-2026-0001', 'MENSUALIDAD', NULL, 1, 'ABC123', 180000.0, 'TRANSFERENCIA', 180000.0, 0.0, 'NEQUI-998124', 'Cajero Principal', datetime('now', '-10 days'), 'APROBADO'),
+(2, 'REC-2026-0002', 'MENSUALIDAD', NULL, 2, 'XYZ789', 95000.0, 'EFECTIVO', 100000.0, 5000.0, 'EFECTIVO', 'Cajero Principal', datetime('now', '-5 days'), 'APROBADO'),
+(3, 'REC-2026-0003', 'TIEMPO_OCASIONAL', NULL, NULL, 'QWE987', 9000.0, 'TARJETA_DEBITO', 9000.0, 0.0, 'VOUCHER-4521', 'Cajero Principal', datetime('now', '-1 day'), 'APROBADO'),
+(4, 'REC-2026-0004', 'MENSUALIDAD', NULL, 4, 'DEF321', 180000.0, 'EFECTIVO', 200000.0, 20000.0, 'EFECTIVO', 'Cajero Principal', datetime('now', '-2 hours'), 'APROBADO');

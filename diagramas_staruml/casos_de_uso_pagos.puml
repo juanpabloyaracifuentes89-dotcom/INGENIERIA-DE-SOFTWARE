@@ -1,0 +1,72 @@
+@startuml Diagrama_Casos_de_Uso_Pagos_AutosColombia
+!theme plain
+left to right direction
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam roundCorner 10
+
+title DIAGRAMA DE CASOS DE USO - GESTIÓN DE PAGOS Y FACTURACIÓN (ITERACIÓN 3)\nSISTEMA DE INFORMACIÓN PARQUEADERO "AUTOS COLOMBIA"
+
+actor "Cajero / Operador de Turno" as Cajero
+actor "Administrador de Parqueadero" as Admin
+actor "Cliente (Propietario / Conductor)" as Cliente
+actor "Pasarela / Terminal Bancario" as Gateway <<External System>>
+
+rectangle "Módulo de Gestión de Pagos y Facturación (Iteración 3)" {
+
+  package "Procesamiento de Pagos" {
+    usecase "CU13: Registrar Pago de Mensualidad" as CU13
+    usecase "CU14: Cobrar Salida Ocasional (Por Tiempo)" as CU14
+    usecase "CU15: Seleccionar Medio de Pago\n(Efectivo, Tarjeta, Transferencia)" as CU15
+    usecase "CU16: Calcular Cambio y Vueltas en Efectivo" as CU16
+    usecase "CU17: Validar Transacción Bancaria / Voucher" as CU17
+  }
+
+  package "Facturación y Comprobantes" {
+    usecase "CU18: Emitir Comprobante de Pago Digital (Recibo POS)" as CU18
+    usecase "CU19: Generar Código QR de Verificación" as CU19
+    usecase "CU20: Enviar Comprobante por Correo Electrónico" as CU20
+  }
+
+  package "Tesorería y Control de Caja" {
+    usecase "CU21: Realizar Arqueo y Cuadre de Caja Diario" as CU21
+    usecase "CU22: Consultar Historial de Pagos y Transacciones" as CU22
+    usecase "CU23: Anular Comprobante de Pago por Inconsistencia" as CU23
+    usecase "CU24: Generar Reporte de Recaudo por Período" as CU24
+  }
+
+  ' Relaciones Include / Extend
+  CU13 ..> CU15 : <<include>>
+  CU14 ..> CU15 : <<include>>
+  
+  CU15 <.. CU16 : <<extend>> (Si el pago es en efectivo)
+  CU15 <.. CU17 : <<extend>> (Si el pago es con tarjeta o transferencia)
+  
+  CU13 ..> CU18 : <<include>>
+  CU14 ..> CU18 : <<include>>
+  
+  CU18 ..> CU19 : <<include>>
+  CU18 <.. CU20 : <<extend>> (A solicitud del cliente)
+
+  CU23 ..> CU22 : <<include>>
+  CU21 ..> CU22 : <<include>>
+}
+
+' Asociaciones de Actores
+Cajero --> CU13
+Cajero --> CU14
+Cajero --> CU18
+Cajero --> CU21
+Cajero --> CU22
+
+Admin --> CU21
+Admin --> CU22
+Admin --> CU23
+Admin --> CU24
+Admin --|> Cajero
+
+CU17 --> Gateway : Valida Aprobación
+
+Cliente --> CU18 : Recibe comprobante oficial
+
+@enduml

@@ -822,3 +822,133 @@ body {
 .toast-error { border-left: 5px solid var(--danger); }
 .toast-info { border-left: 5px solid var(--primary-light); }
 .toast-warning { border-left: 5px solid var(--warning); }
+
+/* ============================================================================
+   ITERACIÓN 3: ESTILOS GESTIÓN DE PAGOS, RECIBO POS Y CUADRE DE CAJA
+   ============================================================================ */
+
+.receipt-container {
+  max-width: 380px;
+  margin: 0 auto;
+  background: #ffffff;
+  padding: 24px;
+  border: 1px dashed #cbd5e1;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  font-family: 'Courier New', Courier, monospace;
+  color: #1e293b;
+}
+
+.receipt-header {
+  text-align: center;
+  border-bottom: 1px dashed #94a3b8;
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+
+.receipt-header h3 {
+  font-size: 1.25rem;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+
+.receipt-header p {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin: 2px 0;
+}
+
+.receipt-body .row-detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  padding: 4px 0;
+}
+
+.receipt-body .row-detail.total {
+  border-top: 1px dashed #94a3b8;
+  border-bottom: 1px dashed #94a3b8;
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin: 10px 0;
+  padding: 8px 0;
+  color: #0f172a;
+}
+
+.receipt-qr {
+  text-align: center;
+  margin: 16px 0 10px 0;
+}
+
+.receipt-qr svg, .receipt-qr img {
+  width: 100px;
+  height: 100px;
+}
+
+.receipt-footer {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #64748b;
+  border-top: 1px dashed #cbd5e1;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.cash-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.cash-kpi-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow);
+}
+
+.cash-kpi-card .kpi-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  color: #ffffff;
+}
+
+.kpi-icon.recaudo { background: #059669; }
+.kpi-icon.efectivo { background: #0284c7; }
+.kpi-icon.digital { background: #7c3aed; }
+.kpi-icon.tickets { background: #ea580c; }
+
+.cash-kpi-data .kpi-val {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  display: block;
+}
+
+.cash-kpi-data .kpi-sub {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.badge-payment {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.badge-payment.efectivo { background: #dcfce7; color: #15803d; }
+.badge-payment.tarjeta { background: #e0f2fe; color: #0369a1; }
+.badge-payment.transferencia { background: #f3e8ff; color: #6b21a8; }
+.badge-payment.aprobado { background: #dcfce7; color: #166534; }

@@ -1,5 +1,5 @@
 // ============================================================================
-// AUTOS COLOMBIA - LÓGICA FRONTEND INTERACTIVA (ITERACIÓN 1)
+// AUTOS COLOMBIA - LÓGICA FRONTEND INTERACTIVA (ITERACIONES 1, 2 Y 3)
 // ============================================================================
 
 const app = {
@@ -7,6 +7,7 @@ const app = {
   mensualidades: [],
   novedades: [],
   vehiculosActivos: [],
+  pagos: [],
 
   init() {
     this.initClock();
@@ -92,6 +93,70 @@ const app = {
       e.preventDefault();
       await this.handleFormNuevoCliente();
     });
+
+    // ITERACIÓN 3: Listeners de Gestión de Pagos y Caja
+    const btnOpenPago = document.getElementById('btnOpenModalPago');
+    if (btnOpenPago) {
+      btnOpenPago.addEventListener('click', () => {
+        this.openModalPagoRapido();
+      });
+    }
+
+    const btnOpenArqueo = document.getElementById('btnOpenModalArqueo');
+    if (btnOpenArqueo) {
+      btnOpenArqueo.addEventListener('click', () => {
+        this.verArqueoCaja();
+      });
+    }
+
+    // Buscar vehículo/monto en modal de pago
+    const btnBuscarPago = document.getElementById('btnBuscarVehiculoPago');
+    if (btnBuscarPago) {
+      btnBuscarPago.addEventListener('click', () => {
+        this.buscarVehiculoParaPago();
+      });
+    }
+
+    // Cambio de método de pago (mostrar/ocultar efectivo vs voucher)
+    const selectMetodo = document.getElementById('selectMetodoPago');
+    if (selectMetodo) {
+      selectMetodo.addEventListener('change', (e) => {
+        const metodo = e.target.value;
+        const rowEfectivo = document.getElementById('rowEfectivo');
+        const rowRef = document.getElementById('rowReferencia');
+        if (metodo === 'EFECTIVO') {
+          rowEfectivo.style.display = 'flex';
+          rowRef.style.display = 'none';
+        } else {
+          rowEfectivo.style.display = 'none';
+          rowRef.style.display = 'block';
+        }
+      });
+    }
+
+    // Cálculo dinámico de vueltos
+    const inputRecibido = document.getElementById('inputDineroRecibido');
+    const inputMonto = document.getElementById('inputMontoPago');
+    const inputCambio = document.getElementById('inputCambioVueltas');
+    if (inputRecibido && inputMonto && inputCambio) {
+      const calcCambio = () => {
+        const total = parseFloat(inputMonto.value) || 0;
+        const recibido = parseFloat(inputRecibido.value) || 0;
+        const cambio = Math.max(0, recibido - total);
+        inputCambio.value = `$${cambio.toLocaleString('es-CO')}`;
+      };
+      inputRecibido.addEventListener('input', calcCambio);
+      inputMonto.addEventListener('input', calcCambio);
+    }
+
+    // Envío de Formulario Registrar Pago
+    const formPago = document.getElementById('formRegistrarPago');
+    if (formPago) {
+      formPago.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        await this.handleFormRegistrarPago();
+      });
+    }
 
     // Envío de Formulario Crear Celda (Iteración 2)
     document.getElementById('formNuevaCelda').addEventListener('submit', async (e) => {
@@ -199,6 +264,9 @@ const app = {
         this.novedades = resNovedades.data;
         this.renderTableNovedades();
       }
+
+      // ITERACIÓN 3: Cargar pagos y arqueo
+      await this.loadPagos();
 
       if (showToastAlert) {
         this.showToast('Datos actualizados en tiempo real', 'info');
@@ -935,6 +1003,285 @@ const app = {
       this.loadAllData();
     } catch (err) {
       this.showToast('Error al actualizar estado de celda', 'error');
+    }
+  },
+
+  // ============================================================================
+  // ITERACIÓN 3: MÉTODOS DE GESTIÓN DE PAGOS Y FACTURACIÓN
+  // ============================================================================
+
+  // Cargar pagos y resumen de caja desde API
+  async loadPagos() {
+    try {
+      const [resPagos, resCaja] = await Promise.all([
+        fetch('/api/pagos').then(r => r.json()),
+        fetch('/api/pagos/resumen-caja').then(r => r.json())
+      ]);
+
+      if (resPagos.success) {
+        this.pagos = resPagos.data;
+        this.renderTablePagos();
+      }
+
+      if (resCaja.success) {
+        this.renderResumenCaja(resCaja.data);
+      }
+    } catch (err) {
+      console.error('Error cargando pagos:', err);
+    }
+  },
+
+  // Renderizar tabla de historial de pagos
+  renderTablePagos() {
+    const tbody = document.getElementById('tbodyPagos');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    if (this.pagos.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="9" class="text-center text-muted">No se registran transacciones de pago el día de hoy.</td></tr>`;
+      return;
+    }
+
+    this.pagos.forEach(p => {
+      const tr = document.createElement('tr');
+      const badgeMetodo = p.metodo_pago === 'EFECTIVO' ? 'efectivo' :
+                          p.metodo_pago.includes('TARJETA') ? 'tarjeta' : 'transferencia';
+
+      const conceptoLabel = p.tipo_pago === 'MENSUALIDAD' ? '🗓️ Mensualidad' : '⏱️ Tiempo Ocasional';
+
+      tr.innerHTML = `
+        <td><strong>${p.numero_comprobante}</strong></td>
+        <td>${p.fecha_hora}</td>
+        <td><span class="plate-badge">${p.placa}</span></td>
+        <td>${p.cliente_nombre || 'Cliente Ocasional'}</td>
+        <td>${conceptoLabel}</td>
+        <td><span class="badge-payment ${badgeMetodo}">${p.metodo_pago.replace('_', ' ')}</span></td>
+        <td><strong>$${p.monto.toLocaleString('es-CO')} COP</strong></td>
+        <td><span class="badge-payment aprobado">${p.estado}</span></td>
+        <td>
+          <button class="btn btn-sm btn-outline" onclick="app.verComprobante('${p.numero_comprobante}')" title="Ver Comprobante">
+            <i class="fa-solid fa-receipt"></i> Recibo
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  },
+
+  // Renderizar KPIs de caja
+  renderResumenCaja(data) {
+    const kpiTotal = document.getElementById('kpiRecaudoTotal');
+    const kpiEfectivo = document.getElementById('kpiRecaudoEfectivo');
+    const kpiDigital = document.getElementById('kpiRecaudoDigital');
+    const kpiTrans = document.getElementById('kpiTransaccionesTotal');
+
+    if (kpiTotal) kpiTotal.textContent = `$${(data.total_recaudado || 0).toLocaleString('es-CO')}`;
+    if (kpiTrans) kpiTrans.textContent = data.total_transacciones || 0;
+
+    let totalEfectivo = 0;
+    let totalDigital = 0;
+
+    (data.desglose_metodos || []).forEach(m => {
+      if (m.metodo_pago === 'EFECTIVO') totalEfectivo += m.subtotal;
+      else totalDigital += m.subtotal;
+    });
+
+    if (kpiEfectivo) kpiEfectivo.textContent = `$${totalEfectivo.toLocaleString('es-CO')}`;
+    if (kpiDigital) kpiDigital.textContent = `$${totalDigital.toLocaleString('es-CO')}`;
+  },
+
+  // Abrir modal de registrar pago
+  openModalPagoRapido(placaSugerida = '', montoSugerido = 0, tipoSugerido = 'MENSUALIDAD') {
+    const form = document.getElementById('formRegistrarPago');
+    if (form) form.reset();
+    
+    document.getElementById('bannerInfoPago').classList.add('hidden');
+    document.getElementById('rowEfectivo').style.display = 'flex';
+    document.getElementById('rowReferencia').style.display = 'none';
+    document.getElementById('inputCambioVueltas').value = '$0';
+
+    if (placaSugerida) {
+      document.getElementById('inputPlacaPago').value = placaSugerida;
+      this.buscarVehiculoParaPago();
+    }
+    if (montoSugerido > 0) {
+      document.getElementById('inputMontoPago').value = montoSugerido;
+      document.getElementById('inputDineroRecibido').value = montoSugerido;
+    }
+    if (tipoSugerido) {
+      document.getElementById('selectTipoPago').value = tipoSugerido;
+    }
+
+    this.openModal('modalRegistrarPago');
+  },
+
+  // Buscar información del vehículo para liquidar o cobrar
+  async buscarVehiculoParaPago() {
+    const placa = (document.getElementById('inputPlacaPago').value || '').trim().toUpperCase();
+    const banner = document.getElementById('bannerInfoPago');
+    if (!placa) {
+      this.showToast('Ingrese la placa a consultar', 'warning');
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/vehiculos/validar/${placa}`).then(r => r.json());
+      if (res.success) {
+        banner.classList.remove('hidden');
+        if (res.vehiculo) {
+          const v = res.vehiculo;
+          const cliente = v.cliente_nombres ? `${v.cliente_nombres} ${v.cliente_apellidos}` : 'No vinculado a contrato mensual';
+          banner.innerHTML = `
+            <strong>Vehículo:</strong> ${v.marca || ''} ${v.modelo || ''} (${v.tipo_nombre})<br>
+            <strong>Titular:</strong> ${cliente} ${v.cliente_doc ? `(C.C ${v.cliente_doc})` : ''}<br>
+            <strong>Tarifa Mes Sugerida:</strong> $${(v.tarifa_mes || 180000).toLocaleString('es-CO')} COP | 
+            <strong>Tarifa Hora:</strong> $${(v.tarifa_hora || 4500).toLocaleString('es-CO')} COP
+          `;
+          // Auto-asignar valor mensual si el concepto es MENSUALIDAD
+          const concepto = document.getElementById('selectTipoPago').value;
+          if (concepto === 'MENSUALIDAD' && v.tarifa_mes) {
+            document.getElementById('inputMontoPago').value = v.tarifa_mes;
+            document.getElementById('inputDineroRecibido').value = v.tarifa_mes;
+          }
+        } else {
+          banner.innerHTML = `<em>Placa no registrada previamente como mensual. Se registrará como cliente de ocasión.</em>`;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  },
+
+  // Procesar registro de pago
+  async handleFormRegistrarPago() {
+    const tipo_pago = document.getElementById('selectTipoPago').value;
+    const placa = (document.getElementById('inputPlacaPago').value || '').trim().toUpperCase();
+    const monto = parseFloat(document.getElementById('inputMontoPago').value) || 0;
+    const metodo_pago = document.getElementById('selectMetodoPago').value;
+    const dinero_recibido = parseFloat(document.getElementById('inputDineroRecibido').value) || monto;
+    const referencia_transaccion = document.getElementById('inputReferenciaTransaccion').value || '';
+    const operador_caja = document.getElementById('inputOperadorCaja').value;
+
+    if (!placa || monto <= 0) {
+      this.showToast('Por favor ingrese la placa y un monto válido', 'warning');
+      return;
+    }
+
+    if (metodo_pago === 'EFECTIVO' && dinero_recibido < monto) {
+      this.showToast('El dinero recibido es menor que el monto a pagar', 'error');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/pagos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo_pago,
+          placa,
+          monto,
+          metodo_pago,
+          dinero_recibido,
+          referencia_transaccion,
+          operador_caja,
+          meses_a_pagar: 1
+        })
+      }).then(r => r.json());
+
+      if (!res.success) {
+        this.showToast(res.message, 'error');
+        return;
+      }
+
+      this.closeModal('modalRegistrarPago');
+      this.showToast(res.message, 'success');
+      await this.loadAllData();
+
+      // Abrir automáticamente el comprobante digital
+      if (res.data && res.data.numero_comprobante) {
+        this.verComprobante(res.data.numero_comprobante);
+      }
+    } catch (err) {
+      console.error(err);
+      this.showToast('Error de conexión al procesar el pago', 'error');
+    }
+  },
+
+  // Ver e imprimir Comprobante de Pago
+  async verComprobante(identificador) {
+    try {
+      const res = await fetch(`/api/pagos/comprobante/${identificador}`).then(r => r.json());
+      if (!res.success || !res.data) {
+        this.showToast('No se encontró el comprobante de pago', 'error');
+        return;
+      }
+
+      const c = res.data;
+      document.getElementById('recNumero').textContent = c.numero_comprobante;
+      document.getElementById('recFecha').textContent = c.fecha_hora;
+      document.getElementById('recPlaca').textContent = c.placa;
+      document.getElementById('recVehiculo').textContent = `${c.tipo_vehiculo || 'Automotor'} - ${c.marca || ''} ${c.modelo || ''}`;
+      document.getElementById('recCliente').textContent = (c.nombres && c.apellidos) ? `${c.nombres} ${c.apellidos}` : 'Cliente Ocasional';
+      document.getElementById('recDoc').textContent = c.cliente_doc || 'No Registrado';
+      document.getElementById('recConcepto').textContent = c.tipo_pago === 'MENSUALIDAD' ? 'Suscripción Mensualidad Parqueadero' : 'Servicio Parqueadero por Horas';
+      document.getElementById('recMetodo').textContent = c.metodo_pago.replace('_', ' ');
+      document.getElementById('recRef').textContent = c.referencia_transaccion || 'N/A';
+      document.getElementById('recTotal').textContent = `$${(c.monto || 0).toLocaleString('es-CO')} COP`;
+      document.getElementById('recRecibido').textContent = `$${(c.dinero_recibido || c.monto || 0).toLocaleString('es-CO')} COP`;
+      document.getElementById('recCambio').textContent = `$${(c.dinero_cambio || 0).toLocaleString('es-CO')} COP`;
+      document.getElementById('recCajero').textContent = c.operador_caja || 'Cajero Principal';
+
+      this.openModal('modalComprobante');
+    } catch (err) {
+      console.error(err);
+      this.showToast('Error al cargar datos del comprobante', 'error');
+    }
+  },
+
+  // Ver Arqueo y Cuadre de Caja Diario
+  async verArqueoCaja() {
+    try {
+      const res = await fetch('/api/pagos/resumen-caja').then(r => r.json());
+      if (!res.success) {
+        this.showToast('Error al consultar arqueo de caja', 'error');
+        return;
+      }
+
+      const d = res.data;
+      document.getElementById('arqueoFechaTitulo').textContent = `Corte de Caja: ${d.fecha}`;
+      document.getElementById('arqTotalRecaudado').textContent = `$${(d.total_recaudado || 0).toLocaleString('es-CO')} COP`;
+      document.getElementById('arqTotalTransacciones').textContent = d.total_transacciones || 0;
+
+      // Métodos
+      const tbodyMetodos = document.getElementById('tbodyArqueoMetodos');
+      tbodyMetodos.innerHTML = '';
+      (d.desglose_metodos || []).forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><strong>${m.metodo_pago.replace('_', ' ')}</strong></td>
+          <td>${m.transacciones}</td>
+          <td><strong>$${m.subtotal.toLocaleString('es-CO')} COP</strong></td>
+        `;
+        tbodyMetodos.appendChild(tr);
+      });
+
+      // Conceptos
+      const tbodyConceptos = document.getElementById('tbodyArqueoConceptos');
+      tbodyConceptos.innerHTML = '';
+      (d.desglose_conceptos || []).forEach(c => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${c.tipo_pago === 'MENSUALIDAD' ? '🗓️ Mensualidades' : '⏱️ Estadías Ocasionales'}</td>
+          <td>${c.transacciones}</td>
+          <td><strong>$${c.subtotal.toLocaleString('es-CO')} COP</strong></td>
+        `;
+        tbodyConceptos.appendChild(tr);
+      });
+
+      this.openModal('modalArqueoCaja');
+    } catch (err) {
+      console.error(err);
+      this.showToast('Error al cargar arqueo de caja', 'error');
     }
   },
 

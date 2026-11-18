@@ -97,8 +97,31 @@ CREATE TABLE IF NOT EXISTS novedades (
     FOREIGN KEY (placa) REFERENCES vehiculos(placa) ON UPDATE CASCADE
 );
 
+-- 8. TABLA: PAGOS Y FACTURACIÓN (ITERACIÓN 3)
+CREATE TABLE IF NOT EXISTS pagos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    numero_comprobante VARCHAR(30) NOT NULL UNIQUE,     -- Ej: 'REC-2026-0001'
+    tipo_pago VARCHAR(30) NOT NULL,                     -- 'MENSUALIDAD', 'TIEMPO_OCASIONAL'
+    id_registro_acceso INTEGER,                         -- Vinculado a salida ocasional
+    id_mensualidad INTEGER,                             -- Vinculado a contrato de mensualidad
+    placa VARCHAR(10) NOT NULL,
+    monto REAL NOT NULL,
+    metodo_pago VARCHAR(30) NOT NULL,                   -- 'EFECTIVO', 'TARJETA_DEBITO', 'TARJETA_CREDITO', 'TRANSFERENCIA'
+    dinero_recibido REAL DEFAULT 0.0,
+    dinero_cambio REAL DEFAULT 0.0,
+    referencia_transaccion VARCHAR(60),                 -- Voucher, comprobante Nequi/Daviplata o 'EFECTIVO'
+    operador_caja VARCHAR(60) DEFAULT 'Cajero Principal',
+    fecha_hora DATETIME DEFAULT CURRENT_TIMESTAMP,
+    estado VARCHAR(20) DEFAULT 'APROBADO',              -- 'APROBADO', 'ANULADO'
+    FOREIGN KEY (id_registro_acceso) REFERENCES registros_acceso(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (id_mensualidad) REFERENCES mensualidades(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    FOREIGN KEY (placa) REFERENCES vehiculos(placa) ON UPDATE CASCADE
+);
+
 -- ÍNDICES PARA OPTIMIZAR BÚSQUEDAS EN TIEMPO REAL
 CREATE INDEX IF NOT EXISTS idx_registros_placa ON registros_acceso(placa);
 CREATE INDEX IF NOT EXISTS idx_registros_estado ON registros_acceso(estado);
 CREATE INDEX IF NOT EXISTS idx_celdas_estado ON celdas(estado);
 CREATE INDEX IF NOT EXISTS idx_mensualidades_placa ON mensualidades(placa, estado);
+CREATE INDEX IF NOT EXISTS idx_pagos_comprobante ON pagos(numero_comprobante);
+CREATE INDEX IF NOT EXISTS idx_pagos_fecha ON pagos(fecha_hora);
